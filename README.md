@@ -19,3 +19,11 @@ config関連の更新
 
 ### feature/requirements_update
 requirements.txtや依存パッケージに関する更新
+
+## add,commit,push,mergeの流れ
+1, git add
+2, git commit -m
+3, git checkout -b feature/documentation_update
+4, git push origin feature/documentation_update
+5, git checkout develop
+6, git merge feature/documentation_update
