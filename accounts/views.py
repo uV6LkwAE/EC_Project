@@ -1,5 +1,6 @@
 
 from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.views.generic import CreateView, TemplateView, UpdateView, DeleteView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin  # ユーザーがログインしているか判定
@@ -15,12 +16,18 @@ class SignupView(CreateView):
     success_url = reverse_lazy('products:product_list')
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        # フォームを保存して新規ユーザーを作成
+        user = form.save()
+
+        # ユーザーを認証してログイン
         username = form.cleaned_data.get('username')
         password = form.cleaned_data.get('password1')
         user = authenticate(username=username, password=password)
-        login(self.request, user)
-        return response
+        if user is not None:
+            login(self.request, user)
+
+        # 明示的にリダイレクト
+        return redirect(self.success_url)
 
 # カスタムログインビュー
 class CustomLoginView(LoginView):
