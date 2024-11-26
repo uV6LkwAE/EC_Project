@@ -12,7 +12,7 @@ class SignupView(CreateView):
     model = CustomUser  # CustomUserモデルを使用
     form_class = SignupForm
     template_name = 'accounts/signup.html'
-    success_url = reverse_lazy('accounts:login')
+    success_url = reverse_lazy('products:product_list')
 
     def form_valid(self, form):
         response = super().form_valid(form)
