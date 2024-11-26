@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>商品編集</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">保存する</button>
+    </form>
+    <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-secondary mt-3">戻る</a>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy, reverse
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Product
+from .forms import ProductForm
+
+# 商品出品ビュー
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'products/create_product.html'
+    # 出品商品にリダイレクトしたい
+    success_url = reverse_lazy('products:product_detail')
+
+    def form_valid(self, form):
+        # 出品者として現在のログインユーザーを設定
+        form.instance.seller = self.request.user
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        print(form.errors)  # フォームエラーメッセージを表示
+        return super().form_invalid(form)
+
+
+    def get_success_url(self):
+        # 商品詳細ページにリダイレクトするためのURLを生成
+        return reverse_lazy('products:product_detail', kwargs={'pk': self.object.pk})
+
+# 商品一覧ビュー
+class ProductListView(ListView):
+    model = Product
+    template_name = 'products/product_list.html'  # 使用するテンプレートファイルの指定
+    context_object_name = 'products'  # テンプレートで使うコンテキスト名
+    paginate_by = 10  # 必要に応じてページネーションを設定
+
+# 商品詳細ビュー
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = 'products/product_detail.html'
+    context_object_name = 'product'
+
+# 商品編集ビュー
+class ProductEditView(LoginRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'products/product_edit.html'
+
+    def get_queryset(self):
+        # ログインしているユーザーが出品した商品だけを編集できるようにする
+        queryset = super().get_queryset()
+        return queryset.filter(seller=self.request.user)
+
+    def get_success_url(self):
+        # 商品詳細ページにリダイレクトするためのURLを生成
+        return reverse('products:product_detail', kwargs={'pk': self.object.pk})
+
+
+# 商品削除ビュー
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    model = Product
+    template_name = 'products/product_delete.html'
+    success_url = reverse_lazy('products:product_list')  # 削除後にリダイレクトするURL
+
+    def get_queryset(self):
+        # ログインしているユーザーが出品した商品だけを削除できるようにする
+        queryset = super().get_queryset()
+        return queryset.filter(seller=self.request.user)

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',  # ソーシャルログインを使用する場合
     # アプリケーション作成時に追加
     'accounts',
+    'products',
 ]
 
 # サイトIDの設定（必須）
