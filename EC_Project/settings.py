@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # アプリケーション作成時に追加
     'accounts',
     'products',
+    'search',
 ]
 
 # サイトIDの設定（必須）

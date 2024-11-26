@@ -23,7 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # accountsアプリのURL設定を含める
     path('products/', include('products.urls')),
-    # path('search/', include('search.urls')),
+    path('search/', include('search.urls')),
     # path('accounts/', include('allauth.urls')),  # allauthのURL
 ]
 
