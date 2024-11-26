@@ -17,6 +17,8 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         # 出品者として現在のログインユーザーを設定
         form.instance.seller = self.request.user
+        # ステータスを「販売中」に設定
+        form.instance.status = 'available'
         return super().form_valid(form)
     
     def form_invalid(self, form):

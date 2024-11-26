@@ -18,13 +18,13 @@ class Product(models.Model):
         ('new', '新品'),
         ('unused', '未使用'),
         ('used', '中古'),
-        ('refurbished', 'リファービッシュ品'),  # 必要なら他の状態も追加可能
+        ('refurbished', 'リファービッシュ品'),
     ]
 
     title = models.CharField(max_length=30, verbose_name='商品名')
     description = models.TextField(verbose_name='商品詳細')
     price = models.IntegerField(verbose_name='価格')
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='販売状況')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='販売状況', default='available')
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='products', verbose_name='出品者') # 出品者が削除された場合、すべての商品レコードも削除
     image = models.ImageField(upload_to='product_images/', verbose_name='商品画像')
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, verbose_name='カテゴリー')
