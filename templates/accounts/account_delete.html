@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+
+{% block title %}Delete Account{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>アカウント削除</h2>
+    <p>本当にアカウントを削除してもよろしいですか？この操作は取り消せません。</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">削除</button>
+    </form>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-secondary mt-3">戻る</a>
+</div>
+{% endblock %}
