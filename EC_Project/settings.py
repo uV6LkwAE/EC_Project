@@ -38,13 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # allauth関連
-    'django.contrib.sites',
+    'django.contrib.sites',  # 必須
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
+    'allauth.socialaccount',  # ソーシャルログインを使用する場合
+    # アプリケーション作成時に追加
     'accounts',
-    'products',
-    'search',
 ]
 
 # サイトIDの設定（必須）
@@ -56,7 +55,7 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',  # allauthの認証
 ]
 
-# カスタムユーザーモデルの設定
+# # カスタムユーザーモデルの設定
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # メールアドレスの確認を必須にするかどうか

@@ -1,0 +1,62 @@
+
+{% extends "base.html" %}
+
+<!-- カスタムフィルター読み込み -->
+{% load add_class %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h2 class="text-center mb-4">Sign Up</h2>
+        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="mb-3">
+                <label for="username" class="form-label">ユーザー名:</label>
+                {{ form.username|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="nickname" class="form-label">ニックネーム:</label>
+                {{ form.nickname|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">メールアドレス:</label>
+                {{ form.email|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="age" class="form-label">年齢:</label>
+                {{ form.age|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">住所:</label>
+                {{ form.address|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="icon" class="form-label">アイコン画像:</label>
+                {{ form.icon|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="password1" class="form-label">パスワード:</label>
+                {{ form.password1|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+                <label for="password2" class="form-label">パスワード(確認用):</label>
+                {{ form.password2|add_class:"form-control" }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+        </form>
+        <p class="text-center mt-3">すでにアカウントをお持ちですか？ <a href="{% url 'accounts:login' %}">ログインはこちら</a></p>
+    </div>
+</div>
+{% endblock %}

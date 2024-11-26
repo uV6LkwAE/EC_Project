@@ -1,0 +1,27 @@
+
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>プロフィール情報</h2>
+    <ul class="list-group">
+        <li class="list-group-item"><strong>ユーザー名:</strong> {{ user.username }}</li>
+        <li class="list-group-item"><strong>ニックネーム:</strong> {{ user.nickname }}</li>
+        <li class="list-group-item"><strong>メールアドレス:</strong> {{ user.email }}</li>
+        <li class="list-group-item"><strong>年齢:</strong> {{ user.age }}</li>
+        <li class="list-group-item"><strong>住所:</strong> {{ user.address }}</li>
+        <li class="list-group-item">
+            <strong>アイコン画像:</strong><br>
+            {% if user.icon %}
+                <img src="{{ user.icon.url }}" alt="Icon" class="img-thumbnail" style="max-width: 150px;">
+            {% else %}
+                画像はありません
+            {% endif %}
+        </li>
+    </ul>
+    <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary mt-3">プロフィール編集</a>
+    <a href="{% url 'accounts:account_delete' %}" class="btn btn-danger mt-3">アカウント削除</a>
+</div>
+{% endblock %}
