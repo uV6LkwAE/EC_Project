@@ -7,6 +7,9 @@
 ### feature/settings_update
 プロジェクトのsettings.pyや他の設定に関する更新
 
+### feature/template_update
+テンプレートの修正
+
 ### feature/documentation_update
 README.md,ドキュメントなどの更新
 
