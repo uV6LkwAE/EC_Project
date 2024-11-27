@@ -99,6 +99,8 @@ def toggle_favorite(request, product_id):
 def favorite_list(request):
     # ログイン中のユーザーのお気に入り商品を取得
     favorites = Favorite.objects.filter(user=request.user)
+    print(f"Favorites for user {request.user}: {favorites}")  # デバッグ用
     products = [favorite.product for favorite in favorites]
+    print(f"Products for user {request.user}: {products}")  # デバッグ用
     
     return render(request, 'products/favorite_list.html', {'products': products})

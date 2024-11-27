@@ -1,6 +1,6 @@
-
 {% extends "base.html" %}
 
+{% block content %}
 <h2>お気に入り商品一覧</h2>
 
 {% if products %}
@@ -16,3 +16,4 @@
 {% else %}
     <p>お気に入りの商品はありません。</p>
 {% endif %}
+{% endblock %}
