@@ -1,6 +1,7 @@
 
 from django.db import models
 from accounts.models import CustomUser
+from django.conf import settings
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
@@ -42,4 +43,15 @@ class Product(models.Model):
                 raise ValidationError('画像のアップロードサイズは3MB以下にしてください。')
         return image
 
-        
+class Favorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')  # ユーザーごとに一意な組み合わせ
+        verbose_name = 'Favorite'
+        verbose_name_plural = 'Favorites'
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.product.title}"

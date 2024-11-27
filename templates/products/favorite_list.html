@@ -1,0 +1,18 @@
+
+{% extends "base.html" %}
+
+<h2>お気に入り商品一覧</h2>
+
+{% if products %}
+    <ul>
+        {% for product in products %}
+            <li>
+                <a href="{% url 'products:product_detail' product.id %}">
+                    {{ product.title }} - {{ product.price }}円
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>お気に入りの商品はありません。</p>
+{% endif %}
