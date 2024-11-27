@@ -62,7 +62,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 # メールアドレスの確認を必須にするかどうか
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # メール確認を必須に
 ACCOUNT_EMAIL_REQUIRED = True  # メールアドレスを必須項目に
-LOGIN_REDIRECT_URL = 'accounts:profile'  # ログイン後にリダイレクトするURL
+LOGIN_REDIRECT_URL = 'products:product_list'  # ログイン後にリダイレクトするURL
 LOGOUT_REDIRECT_URL = 'accounts:login'  # ログアウト後のリダイレクト先
 
 
