@@ -1,9 +1,10 @@
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Product
+from django.contrib.auth.decorators import login_required
+from .models import Product, Favorite
 from .forms import ProductForm
 
 # 商品出品ビュー
@@ -43,6 +44,17 @@ class ProductDetailView(DetailView):
     template_name = 'products/product_detail.html'
     context_object_name = 'product'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # ユーザーがログインしている場合にお気に入りの状態を追加
+        if self.request.user.is_authenticated:
+            context['is_favorited'] = Favorite.objects.filter(
+                user=self.request.user, product=self.object
+            ).exists()
+        else:
+            context['is_favorited'] = False
+        return context
+
 # 商品編集ビュー
 class ProductEditView(LoginRequiredMixin, UpdateView):
     model = Product
@@ -69,3 +81,24 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         # ログインしているユーザーが出品した商品だけを削除できるようにする
         queryset = super().get_queryset()
         return queryset.filter(seller=self.request.user)
+
+# "@login_required" ユーザーがログインしていない場合、ログインページにリダイレクト
+
+@login_required
+def toggle_favorite(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
+
+    if not created:
+        # すでにお気に入りの場合は削除
+        favorite.delete()
+
+    return redirect('products:product_detail', pk=product.id)
+
+@login_required
+def favorite_list(request):
+    # ログイン中のユーザーのお気に入り商品を取得
+    favorites = Favorite.objects.filter(user=request.user)
+    products = [favorite.product for favorite in favorites]
+    
+    return render(request, 'products/favorite_list.html', {'products': products})
