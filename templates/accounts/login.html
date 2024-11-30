@@ -1,7 +1,6 @@
 
 {% extends "base.html" %}
-
-{% load add_class %}
+{% load add_class_accounts from accounts %}
 
 {% block title %}Login{% endblock %}
 
@@ -14,11 +13,11 @@
             {{ form.non_field_errors }}
             <div class="mb-3">
                 <label for="username" class="form-label">ユーザー名:</label>
-                {{ form.username|add_class:"form-control" }}
+                {{ form.username|add_class_accounts:"form-control" }}
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">パスワード:</label>
-                {{ form.password|add_class:"form-control" }}
+                {{ form.password|add_class_accounts:"form-control" }}
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>

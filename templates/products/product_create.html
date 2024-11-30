@@ -1,95 +1,87 @@
 
 {% extends "base.html" %}
+{% load add_class_products from products %}
 
-{% load add_class %}
 
 {% block title %}商品を出品{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4">商品を出品する</h2>
-    <form method="post" enctype="multipart/form-data" id="upload-form">
+    
+    <!-- エラーメッセージの表示 -->
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <ul>
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.non_field_errors }}
         <div class="form-group">
             <label for="title">商品名:</label>
-            {{ form.title|add_class:"form-control" }}
+            {{ form.title|add_class_products:"form-control" }}
         </div>
         <div class="form-group">
             <label for="description">商品詳細:</label>
-            {{ form.description|add_class:"form-control" }}
+            {{ form.description|add_class_products:"form-control" }}
         </div>
         <div class="form-group">
             <label for="price">価格:</label>
-            {{ form.price|add_class:"form-control" }}
+            {{ form.price|add_class_products:"form-control" }}
         </div>
         <div class="form-group">
             <label for="category">カテゴリー:</label>
-            {{ form.category|add_class:"form-control" }}
+            {{ form.category|add_class_products:"form-control" }}
         </div>
         <div class="form-group">
             <label for="condition">状態:</label>
-            {{ form.condition|add_class:"form-control" }}
+            {{ form.condition|add_class_products:"form-control" }}
         </div>
         <div class="form-group">
             <label for="images">商品画像:</label>
             <input type="file" id="file-input" name="images" multiple class="form-control-file">
         </div>
 
-        <!-- 画像プレビューエリア -->
-        <div id="image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;"></div>
-
-        <!-- 隠しフィールド: 画像順序を保持 -->
-        <input type="hidden" name="order_data" id="order-data">
+        <!-- プレビューエリア -->
+        <h5>プレビュー</h5>
+        <div id="image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;">
+            <!-- プレビュー画像がここに表示されます -->
+        </div>
 
         <button type="submit" class="btn btn-primary mt-3">出品する</button>
     </form>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<!-- プレビュー用のJavaScript -->
 <script>
-    const imagePreview = document.getElementById('image-preview');
-    const fileInput = document.getElementById('file-input');
-    const orderDataInput = document.getElementById('order-data');
-    const uploadedFiles = [];
-
-    // ファイル選択時のプレビュー表示
-    fileInput.addEventListener('change', (event) => {
+    document.getElementById('file-input').addEventListener('change', function(event) {
+        const imagePreview = document.getElementById('image-preview');
         imagePreview.innerHTML = ''; // プレビューをクリア
-        uploadedFiles.length = 0;
-
         const files = event.target.files;
+
+        // 選択されたファイルをプレビュー
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            uploadedFiles.push(file);
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.width = '100%';
-                img.style.border = '1px solid #ddd';
-                img.style.borderRadius = '4px';
-
-                const div = document.createElement('div');
-                div.dataset.index = i;
-                div.appendChild(img);
-                imagePreview.appendChild(div);
-            };
-            reader.readAsDataURL(file);
+            // 画像ファイルであることを確認
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '100%';
+                    img.style.border = '1px solid #ddd';
+                    img.style.borderRadius = '4px';
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
         }
-    });
-
-    // SortableJSでドラッグ＆ドロップを有効化
-    new Sortable(imagePreview, {
-        animation: 150,
-        onEnd: () => {
-            const orderData = [];
-            document.querySelectorAll('#image-preview > div').forEach((item, index) => {
-                orderData.push({ index: item.dataset.index, order: index });
-            });
-            orderDataInput.value = JSON.stringify(orderData); // JSON形式で順序を保持
-        },
     });
 </script>
 {% endblock %}

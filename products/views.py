@@ -1,16 +1,13 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, UpdateView, ListView, DetailView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-import json
+from django.forms.utils import ErrorList
 from .models import Product, ProductImage, Favorite
 from .forms import ProductForm
-from django.core.exceptions import ValidationError
-
+import json
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
@@ -18,21 +15,42 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     template_name = 'products/product_create.html'  # テンプレート名を修正
 
     def form_valid(self, form):
+        # 新しい画像を取得
+        new_images = self.request.FILES.getlist('images')
+
+        # 制約チェック
+        error_messages = []
+
+        # 1. 枚数チェック
+        if len(new_images) > 10:  # 上限10枚
+            error_messages.append(f"画像は合計10枚までアップロード可能です（現在{len(new_images)}枚アップロードしようとしています）。")
+
+        # 2. 各画像のサイズチェック
+        for image in new_images:
+            if image.size > 10 * 1024 * 1024:  # 10MB制限
+                error_messages.append(f"画像「{image.name}」のサイズが10MBを超えています。")
+
+        # エラーがあればテンプレートに表示
+        if error_messages:
+            for message in error_messages:
+                form.add_error(None, message)  # フォームにエラーメッセージを追加
+            return self.form_invalid(form)
+
+        # 商品の基本情報を保存
         self.object = form.save(commit=False)
         self.object.seller = self.request.user
         self.object.save()
 
-        # 画像順序データを取得して保存
-        order_data = self.request.POST.get('order_data')
-        if order_data:
-            for item in json.loads(order_data):
-                ProductImage.objects.create(
-                    product=self.object,
-                    image=self.request.FILES.getlist('images')[int(item['index'])],
-                    order=item['order']
-                )
+        # 画像を保存
+        for image in new_images:
+            ProductImage.objects.create(
+                product=self.object,
+                image=image,
+                order=self.object.images.count()  # 順序を指定
+            )
+
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         if self.object:
             return reverse('products:product_detail', kwargs={'pk': self.object.pk})
@@ -47,29 +65,39 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save()
 
-        # 画像順序データを取得
-        order_data = self.request.POST.get('order_data')
-        if order_data:
-            order_data = json.loads(order_data)
-            # 既存画像の順序を更新
-            for item in order_data:
-                if 'id' in item:  # 既存画像
-                    image = ProductImage.objects.filter(product=self.object, id=item['id']).first()
-                    if image:
-                        image.order = item['order']
-                        image.save()
+        # 既存画像の枚数を取得
+        existing_image_count = self.object.images.count()
 
-            # 新規画像を保存
-            new_files = self.request.FILES.getlist('images')
-            for item in order_data:
-                if 'index' in item:  # 新規画像
-                    index = int(item['index'])
-                    if index < len(new_files):  # ファイルが存在する場合のみ処理
-                        ProductImage.objects.create(
-                            product=self.object,
-                            image=new_files[index],
-                            order=item['order']
-                        )
+        # 新しい画像を取得
+        new_images = self.request.FILES.getlist('images')
+
+        # 制約チェック
+        total_images = existing_image_count + len(new_images)
+        error_messages = []
+
+        # 1. 合計枚数チェック
+        if total_images > 10:  # 上限10枚
+            excess_count = total_images - 10
+            error_messages.append(f"画像は合計10枚までアップロード可能です（現在{existing_image_count}枚、新規{len(new_images)}枚、{excess_count}枚超過）。")
+
+        # 2. 各画像のサイズチェック
+        for image in new_images:
+            if image.size > 10 * 1024 * 1024:  # 10MB制限
+                error_messages.append(f"画像「{image.name}」のサイズが10MBを超えています。")
+
+        # エラーがあればテンプレートに表示
+        if error_messages:
+            for message in error_messages:
+                form.add_error(None, message)  # フォームにエラーメッセージを追加
+            return self.form_invalid(form)
+
+        # 新しい画像を保存
+        for image in new_images:
+            ProductImage.objects.create(
+                product=self.object,
+                image=image,
+                order=self.object.images.count()  # 最後に追加
+            )
 
         return super().form_valid(form)
 
@@ -81,7 +109,7 @@ class ProductListView(ListView):
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
-    paginate_by = 10
+    paginate_by = 10  # ページネーション
 
 
 class ProductDetailView(DetailView):
@@ -106,8 +134,7 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('products:product_list')
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.filter(seller=self.request.user)
+        return super().get_queryset().filter(seller=self.request.user)
 
 
 @login_required
