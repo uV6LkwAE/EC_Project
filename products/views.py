@@ -4,41 +4,86 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from .models import Product, Favorite
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+import json
+from .models import Product, ProductImage, Favorite
 from .forms import ProductForm
+from django.core.exceptions import ValidationError
 
-# 商品出品ビュー
+
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
-    template_name = 'products/create_product.html'
-    # 出品商品にリダイレクトしたい
-    success_url = reverse_lazy('products:product_detail')
+    template_name = 'products/product_create.html'  # テンプレート名を修正
 
     def form_valid(self, form):
-        # 出品者として現在のログインユーザーを設定
-        form.instance.seller = self.request.user
-        # ステータスを「販売中」に設定
-        form.instance.status = 'available'
+        self.object = form.save(commit=False)
+        self.object.seller = self.request.user
+        self.object.save()
+
+        # 画像順序データを取得して保存
+        order_data = self.request.POST.get('order_data')
+        if order_data:
+            for item in json.loads(order_data):
+                ProductImage.objects.create(
+                    product=self.object,
+                    image=self.request.FILES.getlist('images')[int(item['index'])],
+                    order=item['order']
+                )
         return super().form_valid(form)
     
-    def form_invalid(self, form):
-        print(form.errors)  # フォームエラーメッセージを表示
-        return super().form_invalid(form)
+    def get_success_url(self):
+        if self.object:
+            return reverse('products:product_detail', kwargs={'pk': self.object.pk})
+        return reverse('products:product_list')  # フォールバックとして商品一覧にリダイレクト
 
+
+class ProductEditView(LoginRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'products/product_edit.html'
+
+    def form_valid(self, form):
+        self.object = form.save()
+
+        # 画像順序データを取得
+        order_data = self.request.POST.get('order_data')
+        if order_data:
+            order_data = json.loads(order_data)
+            # 既存画像の順序を更新
+            for item in order_data:
+                if 'id' in item:  # 既存画像
+                    image = ProductImage.objects.filter(product=self.object, id=item['id']).first()
+                    if image:
+                        image.order = item['order']
+                        image.save()
+
+            # 新規画像を保存
+            new_files = self.request.FILES.getlist('images')
+            for item in order_data:
+                if 'index' in item:  # 新規画像
+                    index = int(item['index'])
+                    if index < len(new_files):  # ファイルが存在する場合のみ処理
+                        ProductImage.objects.create(
+                            product=self.object,
+                            image=new_files[index],
+                            order=item['order']
+                        )
+
+        return super().form_valid(form)
 
     def get_success_url(self):
-        # 商品詳細ページにリダイレクトするためのURLを生成
-        return reverse_lazy('products:product_detail', kwargs={'pk': self.object.pk})
+        return reverse('products:product_detail', kwargs={'pk': self.object.pk})
 
-# 商品一覧ビュー
+
 class ProductListView(ListView):
     model = Product
-    template_name = 'products/product_list.html'  # 使用するテンプレートファイルの指定
-    context_object_name = 'products'  # テンプレートで使うコンテキスト名
-    paginate_by = 10  # 必要に応じてページネーションを設定
+    template_name = 'products/product_list.html'
+    context_object_name = 'products'
+    paginate_by = 10
 
-# 商品詳細ビュー
+
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'products/product_detail.html'
@@ -46,7 +91,6 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # ユーザーがログインしている場合にお気に入りの状態を追加
         if self.request.user.is_authenticated:
             context['is_favorited'] = Favorite.objects.filter(
                 user=self.request.user, product=self.object
@@ -55,34 +99,16 @@ class ProductDetailView(DetailView):
             context['is_favorited'] = False
         return context
 
-# 商品編集ビュー
-class ProductEditView(LoginRequiredMixin, UpdateView):
-    model = Product
-    form_class = ProductForm
-    template_name = 'products/product_edit.html'
 
-    def get_queryset(self):
-        # ログインしているユーザーが出品した商品だけを編集できるようにする
-        queryset = super().get_queryset()
-        return queryset.filter(seller=self.request.user)
-
-    def get_success_url(self):
-        # 商品詳細ページにリダイレクトするためのURLを生成
-        return reverse('products:product_detail', kwargs={'pk': self.object.pk})
-
-
-# 商品削除ビュー
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product
     template_name = 'products/product_delete.html'
-    success_url = reverse_lazy('products:product_list')  # 削除後にリダイレクトするURL
+    success_url = reverse_lazy('products:product_list')
 
     def get_queryset(self):
-        # ログインしているユーザーが出品した商品だけを削除できるようにする
         queryset = super().get_queryset()
         return queryset.filter(seller=self.request.user)
 
-# "@login_required" ユーザーがログインしていない場合、ログインページにリダイレクト
 
 @login_required
 def toggle_favorite(request, product_id):
@@ -90,17 +116,13 @@ def toggle_favorite(request, product_id):
     favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
 
     if not created:
-        # すでにお気に入りの場合は削除
         favorite.delete()
 
     return redirect('products:product_detail', pk=product.id)
 
+
 @login_required
 def favorite_list(request):
-    # ログイン中のユーザーのお気に入り商品を取得
     favorites = Favorite.objects.filter(user=request.user)
-    print(f"Favorites for user {request.user}: {favorites}")  # デバッグ用
     products = [favorite.product for favorite in favorites]
-    print(f"Products for user {request.user}: {products}")  # デバッグ用
-    
     return render(request, 'products/favorite_list.html', {'products': products})

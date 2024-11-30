@@ -18,7 +18,7 @@
                 </a>
                 <nav>
                     <!-- タブを追加 -->
-                    <a href="{% url 'products:create_product' %}" class="btn btn-outline-light me-2">出品</a>
+                    <a href="{% url 'products:product_create' %}" class="btn btn-outline-light me-2">出品</a>
                     <a href="{% url 'products:product_list' %}" class="btn btn-outline-light me-2">商品一覧</a>
                     <a href="{% url 'search:product_search' %}" class="btn btn-outline-light me-2">検索</a>
                     {% if user.is_authenticated %}

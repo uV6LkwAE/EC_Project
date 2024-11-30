@@ -1,17 +1,13 @@
 
 from django import forms
-from .models import Product
+from .models import Product, ProductImage
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = [
-            'title',
-            'description',
-            'price',
-            'image',
-            'category',
-            'condition',
-        ]
+        fields = ['title', 'description', 'price', 'category', 'condition']
 
-# forms.pyからsellerを削除
+class ProductImageForm(forms.ModelForm):
+    class Meta:
+        model = ProductImage
+        fields = ['image', 'order']

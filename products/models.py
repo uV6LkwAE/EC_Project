@@ -1,7 +1,9 @@
 
 from django.db import models
+from django.urls import reverse
 from accounts.models import CustomUser
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
@@ -26,22 +28,32 @@ class Product(models.Model):
     description = models.TextField(verbose_name='商品詳細')
     price = models.IntegerField(verbose_name='価格')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='販売状況', default='available')
-    seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='products', verbose_name='出品者') # 出品者が削除された場合、すべての商品レコードも削除
-    image = models.ImageField(upload_to='product_images/', verbose_name='商品画像')
+    seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='products', verbose_name='出品者')
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, verbose_name='カテゴリー')
     condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='new', verbose_name='状態')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日') # 更新されるたびにフィールドに現在の日時を自動的に設定
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日')
 
     def __str__(self):
         return self.title
 
-    def clean_image(self):
-        image = self.cleaned_data.get('image')
-        if image:
-            if image.size > 3 * 1024 * 1024:
-                raise ValidationError('画像のアップロードサイズは3MB以下にしてください。')
-        return image
+    def get_absolute_url(self):
+        return reverse('products:product_detail', kwargs={'pk': self.pk})
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE, verbose_name='商品')
+    image = models.ImageField(upload_to='product_images/', verbose_name='商品画像')
+    order = models.PositiveIntegerField(default=0, verbose_name='表示順')
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Product Image'
+        verbose_name_plural = 'Product Images'
+
+    def clean(self):
+        super().clean()
+        if self.image.size > 10 * 1024 * 1024:  # 10MB以下のサイズ制限
+            raise ValidationError('画像のアップロードサイズは10MB以下にしてください。')
 
 class Favorite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
@@ -49,7 +61,7 @@ class Favorite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product')  # ユーザーごとに一意な組み合わせ
+        unique_together = ('user', 'product')
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
 
