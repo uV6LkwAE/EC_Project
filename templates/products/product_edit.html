@@ -1,26 +1,16 @@
 
 {% extends "base.html" %}
-{% load add_class_products from products %}
+
+{% load add_class_products from products_add_class %}
 
 {% block title %}商品編集{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4">商品を編集する</h2>
-    
-    <!-- エラーメッセージの表示 -->
-    {% if form.non_field_errors %}
-    <div class="alert alert-danger">
-        <ul>
-            {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="edit-form">
         {% csrf_token %}
+        {{ form.non_field_errors }}
         <div class="form-group">
             <label for="title">商品名:</label>
             {{ form.title|add_class_products:"form-control" }}
@@ -50,47 +40,82 @@
         <h5>既存の画像</h5>
         <div id="existing-image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;">
             {% for image in product.images.all %}
-            <div>
-                <img src="{{ image.image.url }}" alt="既存画像" style="width: 100%; border: 1px solid #ddd; border-radius: 4px;">
+            <div data-id="{{ image.id }}">
+                <img src="{{ image.image.url }}" style="width: 100%; border: 1px solid #ddd; border-radius: 4px;">
             </div>
             {% endfor %}
         </div>
 
-        <!-- 新しい画像のプレビュー -->
-        <h5>新しい画像のプレビュー</h5>
-        <div id="new-image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;">
-            <!-- 新しい画像のプレビューがここに表示されます -->
-        </div>
+        <!-- 新規アップロード画像のプレビュー -->
+        <h5>新しく追加した画像</h5>
+        <div id="new-image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;"></div>
+
+        <!-- 隠しフィールド: 並び順データを保持 -->
+        <input type="hidden" name="order_data" id="order-data">
 
         <button type="submit" class="btn btn-primary mt-3">保存する</button>
     </form>
 </div>
 
-<!-- プレビュー用のJavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
-    document.getElementById('file-input').addEventListener('change', function(event) {
-        const newImagePreview = document.getElementById('new-image-preview');
-        newImagePreview.innerHTML = ''; // プレビューをクリア
-        const files = event.target.files;
+    const existingImagePreview = document.getElementById('existing-image-preview');
+    const newImagePreview = document.getElementById('new-image-preview');
+    const fileInput = document.getElementById('file-input');
+    const orderDataInput = document.getElementById('order-data');
+    const uploadedFiles = [];
 
-        // 選択されたファイルをプレビュー
+    // 新しい画像を選択した際のプレビュー表示
+    fileInput.addEventListener('change', (event) => {
+        newImagePreview.innerHTML = ''; // 新規画像のプレビューをクリア
+        uploadedFiles.length = 0;
+
+        const files = event.target.files;
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
+            uploadedFiles.push(file);
 
-            // 画像ファイルであることを確認
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.width = '100%';
-                    img.style.border = '1px solid #ddd';
-                    img.style.borderRadius = '4px';
-                    newImagePreview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '100%';
+                img.style.border = '1px solid #ddd';
+                img.style.borderRadius = '4px';
+
+                const div = document.createElement('div');
+                div.dataset.index = i;
+                div.appendChild(img);
+                newImagePreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
         }
     });
+
+    // SortableJSでドラッグ＆ドロップを有効化
+    new Sortable(existingImagePreview, {
+        animation: 150,
+        group: 'images', // グループ化して新規画像と一緒に並び替え可能に
+        onEnd: updateOrderData
+    });
+
+    new Sortable(newImagePreview, {
+        animation: 150,
+        group: 'images', // 既存画像と統合
+        onEnd: updateOrderData
+    });
+
+    // 並び替え後の順序データを更新
+    function updateOrderData() {
+        const orderData = [];
+        document.querySelectorAll('#existing-image-preview > div, #new-image-preview > div').forEach((item, index) => {
+            if (item.dataset.id) {
+                orderData.push({ id: item.dataset.id, order: index }); // 既存画像
+            } else if (item.dataset.index) {
+                orderData.push({ index: item.dataset.index, order: index }); // 新規画像
+            }
+        });
+        orderDataInput.value = JSON.stringify(orderData);
+    }
 </script>
 {% endblock %}
