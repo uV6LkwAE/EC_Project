@@ -23,6 +23,10 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        <!-- No.008 デバッグ -->
+        <!-- <pre>Category Choices: {{ form.category.field.choices }}</pre>
+        <pre>Condition Choices: {{ form.condition.field.choices }}</pre> -->
+
         <div class="form-group">
             <label for="title">商品名:</label>
             {{ form.title|add_class_products:"form-control" }}

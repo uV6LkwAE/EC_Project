@@ -55,7 +55,17 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         if self.object:
             return reverse('products:product_detail', kwargs={'pk': self.object.pk})
         return reverse('products:product_list')  # フォールバックとして商品一覧にリダイレクト
+    
+    # No.008 デバッグ
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
 
+        
+    #     print("フォームのクラス:", self.form_class.__name__)
+    #     print("Category Choices:", self.form_class.base_fields['category'].choices)
+    #     print("Condition Choices:", self.form_class.base_fields['condition'].choices)
+
+    #     return context
 
 class ProductEditView(LoginRequiredMixin, UpdateView):
     model = Product
