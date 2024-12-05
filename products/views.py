@@ -252,11 +252,11 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         return reverse('products:product_detail', kwargs={'pk': self.object.pk})
 
 
-class ProductListView(ListView):
-    model = Product
-    template_name = 'products/product_list.html'
-    context_object_name = 'products'
-    paginate_by = 10  # ページネーション
+# class ProductListView(ListView):
+#     model = Product
+#     template_name = 'products/product_list.html'
+#     context_object_name = 'products'
+#     paginate_by = 10  # ページネーション
 
 
 class ProductDetailView(DetailView):
