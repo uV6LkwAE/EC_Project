@@ -2,8 +2,6 @@
 {% extends "base.html" %}
 {% load add_class_products from products_add_class %}
 
-
-
 {% block title %}商品を出品{% endblock %}
 
 {% block content %}
@@ -23,10 +21,6 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <!-- No.008 デバッグ -->
-        <!-- <pre>Category Choices: {{ form.category.field.choices }}</pre>
-        <pre>Condition Choices: {{ form.condition.field.choices }}</pre> -->
-
         <div class="form-group">
             <label for="title">商品名:</label>
             {{ form.title|add_class_products:"form-control" }}
@@ -58,35 +52,156 @@
             <!-- プレビュー画像がここに表示されます -->
         </div>
 
+        <!-- 隠しフィールド: 並び順データを保持 -->
+        <input type="hidden" name="order_data" id="order-data">
+
+        <!-- 隠しフィールド: 削除された画像のIDを保持 -->
+        <input type="hidden" name="deleted_images" id="deleted-images">
+
+
         <button type="submit" class="btn btn-primary mt-3">出品する</button>
     </form>
 </div>
 
-<!-- プレビュー用のJavaScript -->
+<!-- CSS -->
+<style>
+    .image-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-container img {
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 255, 255, 0.9); /* 少し濃くして視認性を高める */
+    color: red;
+    border: none;
+    width: 32px; /* アイコンボタンの幅 */
+    height: 32px; /* アイコンボタンの高さ */
+    border-radius: 50%; /* 完全な円形にする */
+    font-size: 20px; /* アイコンサイズ */
+    display: flex; /* フレックスボックスで中央揃え */
+    align-items: center; /* 縦方向の中央揃え */
+    justify-content: center; /* 横方向の中央揃え */
+    cursor: pointer;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* ボタンに軽い影を付ける */
+    transition: background-color 0.2s; /* ホバー時のスムーズな変化 */
+}
+
+.delete-btn:hover {
+    background-color: rgba(255, 0, 0, 0.8); /* ホバー時の背景色 */
+    color: white; /* ホバー時のアイコン色 */
+}
+
+
+    .delete-btn i {
+        font-size: 1.2rem;
+    }
+
+    .image-container:hover .delete-btn {
+        display: flex;
+    }
+</style>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
-    document.getElementById('file-input').addEventListener('change', function(event) {
-        const imagePreview = document.getElementById('image-preview');
-        imagePreview.innerHTML = ''; // プレビューをクリア
+    const fileInput = document.getElementById('file-input');
+    const imagePreview = document.getElementById('image-preview');
+    const orderDataInput = document.getElementById('order-data');
+    const deletedImagesInput = document.getElementById('deleted-images');
+    let deletedImages = []; // 削除された画像IDを追跡する配列
+
+    // 並び替え後の順序データを更新
+    let tempImageId = 1; // 新規画像用の一時IDカウンター
+
+    function updateOrderData() {
+        const orderData = [];
+        document.querySelectorAll('#image-preview > div').forEach((item, index) => {
+            const imageId = item.dataset.id || `temp-${tempImageId++}`; // 新規画像に一時IDを割り当て, 新規画像の場合、noneになってしまう
+            orderData.push({ id: imageId, order: index });
+        });
+        orderDataInput.value = JSON.stringify(orderData);
+    }
+
+    // 新しい画像のプレビューと削除
+    fileInput.addEventListener('change', function (event) {
         const files = event.target.files;
+        imagePreview.innerHTML = ''; // プレビューをクリア
 
-        // 選択されたファイルをプレビュー
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-
-            // 画像ファイルであることを確認
+        Array.from(files).forEach((file, index) => {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
+                    const container = document.createElement('div');
+                    container.classList.add('image-container');
+                    container.dataset.id = `temp-${tempImageId++}`; // 一時IDを割り当て
+
+
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.width = '100%';
-                    img.style.border = '1px solid #ddd';
-                    img.style.borderRadius = '4px';
-                    imagePreview.appendChild(img);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.classList.add('delete-btn');
+                    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+
+                    deleteBtn.addEventListener('click', function () {
+                        container.remove(); // フロントエンドで画像プレビューを削除
+                        updateOrderData(); // 並び順を更新
+                    });
+
+                    container.appendChild(img);
+                    container.appendChild(deleteBtn);
+                    imagePreview.appendChild(container);
+                    updateOrderData();
                 };
                 reader.readAsDataURL(file);
             }
+        });
+    });
+
+    // 既存画像の削除
+    imagePreview.addEventListener('click', function (event) {
+        const deleteButton = event.target.closest('.delete-btn');
+        if (deleteButton) {
+            const container = deleteButton.closest('.image-container');
+            const imageId = container.dataset.id; // 画像IDを取得
+            if (imageId) {
+                deletedImages.push(imageId); // 削除された画像IDを追跡
+                deletedImagesInput.value = JSON.stringify(deletedImages); // 隠しフィールドに反映
+            }
+            container.remove(); // フロントエンドで画像プレビューを削除
+            updateOrderData(); // 並び順を更新
         }
     });
+
+    // SortableJSでドラッグ＆ドロップを有効化
+    new Sortable(imagePreview, {
+        animation: 150,
+        onEnd: updateOrderData // 並び順が変更されたときにデータを更新
+    });
+
+    // フォーム送信時に削除対象の画像を追跡
+    document.querySelector('form').addEventListener('submit', function (event) {
+        if (deletedImages.length > 0) {
+            deletedImagesInput.value = JSON.stringify(deletedImages);
+        }
+    });
+
+    // フォーム送信時に削除対象の画像を追跡
+    document.querySelector('form').addEventListener('submit', function (event) {
+        console.log('Deleted Images:', deletedImages); // デバッグログ
+        if (deletedImages.length > 0) {
+            deletedImagesInput.value = JSON.stringify(deletedImages); // サーバーに送信
+        }
+    });
+
 </script>
 {% endblock %}

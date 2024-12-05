@@ -21,9 +21,9 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')),  # accountsアプリのURL設定を含める
-    path('products/', include('products.urls')),
-    path('search/', include('search.urls')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
+    path('products/', include('products.urls', namespace='products')),  # ここを確認
+    path('search/', include('search.urls', namespace='search')),
     # path('accounts/', include('allauth.urls')),  # allauthのURL
 ]
 
