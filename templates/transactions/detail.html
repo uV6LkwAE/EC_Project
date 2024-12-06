@@ -1,0 +1,31 @@
+
+<h2>取引詳細</h2>
+<p>商品: {{ transaction.product.title }}</p>
+<p>価格: ¥{{ transaction.product.price }}</p>
+<p>購入者: {{ transaction.buyer.username }}</p>
+<p>出品者: {{ transaction.seller.username }}</p>
+<p>配送先: {{ transaction.shipping_address }}</p>
+<p>ステータス: {{ transaction.get_status_display }}</p>
+
+<!-- 購入者用メッセージ -->
+{% if user == transaction.buyer and transaction.status == "pending" %}
+<p>商品が発送されるまでお待ちください。</p>
+{% endif %}
+
+<!-- 出品者用のボタン -->
+{% if user == transaction.seller and transaction.status == "pending" %}
+<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="shipped">
+    <button type="submit" class="btn btn-primary">発送完了</button>
+</form>
+{% endif %}
+
+<!-- 購入者用のボタン -->
+{% if user == transaction.buyer and transaction.status == "shipped" %}
+<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="received">
+    <button type="submit" class="btn btn-success">商品を受け取る</button>
+</form>
+{% endif %}

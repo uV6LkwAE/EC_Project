@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'products',
     'search',
+    'transactions'
 ]
 
 # サイトIDの設定（必須）

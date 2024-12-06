@@ -60,6 +60,11 @@
                 </form>
                 <p class="mt-2">お気に入り登録数: {{ product.favorited_by.count }}</p>
             </div>
+
+            <!-- 購入ボタン -->
+            {% if user.is_authenticated and product.seller != user and product.status == "available" %}
+                <a href="{% url 'transactions:initiate_transaction' product.id %}" class="btn btn-success mt-3">購入する</a>
+            {% endif %}
             
             <!-- 出品者用の操作リンク -->
             {% if user.is_authenticated and product.seller == user %}

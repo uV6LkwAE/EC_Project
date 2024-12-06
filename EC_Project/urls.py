@@ -24,6 +24,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('products/', include('products.urls', namespace='products')),  # ここを確認
     path('search/', include('search.urls', namespace='search')),
+    path('transactions/', include('transactions.urls')),
     # path('accounts/', include('allauth.urls')),  # allauthのURL
 ]
 
