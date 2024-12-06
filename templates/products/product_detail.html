@@ -6,9 +6,14 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row">
-        <div class="col-md-7">
+        <div class="col-md-7 position-relative">
             <!-- メインのスライダー -->
             <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                <!-- SOLD OUT レイヤー -->
+                {% if product.status == "sold_out" %}
+                <div class="sold-out">SOLD OUT</div>
+                {% endif %}
+            
                 <div class="carousel-inner">
                     {% for image in product.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
@@ -16,6 +21,7 @@
                         </div>
                     {% endfor %}
                 </div>
+            
                 <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
@@ -25,9 +31,9 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
 
             <!-- サムネイル -->
-            <!-- メイン画像下部にすべての画像をプレビュー -->
             <div class="mt-3 d-flex justify-content-center">
                 {% for image in product.images.all %}
                     <img src="{{ image.image.url }}" alt="Thumbnail {{ forloop.counter }}" 
@@ -78,3 +84,30 @@
 <!-- Bootstrap用スクリプト -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}
+
+<style>
+    .carousel {
+        position: relative !important;
+    }
+
+    .carousel-inner {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    .sold-out {
+        position: absolute !important;
+        top: 10px !important;
+        left: 10px !important;
+        background: rgba(255, 0, 0, 0.8) !important; /* 半透明の赤背景 */
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        padding: 5px 20px !important;
+        z-index: 1000 !important; /* 最前面に配置 */
+        pointer-events: none !important;
+        border-radius: 5px !important;
+    }
+
+</style>
