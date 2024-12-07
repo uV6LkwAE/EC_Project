@@ -19,13 +19,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 
 ALLOWED_HOSTS = []
-
-env = environ.Env()
-env.read_env(os.path.join(BASE_DIR, '.env'))
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
 
 # Application definition
 
@@ -108,7 +105,14 @@ WSGI_APPLICATION = 'EC_Project.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': env.db(),
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ec_project_db',           # 使用するデータベース名
+        'USER': 'ec_user',      # PostgreSQLのユーザー名
+        'PASSWORD': 'ec_user',       # PostgreSQLのパスワード
+        'HOST': 'localhost',               # ホスト名（ローカルで実行する場合は 'localhost'）
+        'PORT': '5432',                    # PostgreSQLのデフォルトポート
+    }
 }
 
 
