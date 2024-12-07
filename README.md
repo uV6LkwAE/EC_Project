@@ -30,3 +30,14 @@ requirements.txtや依存パッケージに関する更新
 4, git push origin feature/documentation_update
 5, git checkout develop
 6, git merge feature/documentation_update
+
+## デプロイ関連ブランチ運用方法
+featureブランチで開発し、完成したらdevelopにマージ
+
+完全に安定したと確認できたらmainにマージ
+
+feature/deployment_setupを使用する際は、developをpullしてから作業を行う
+
+デプロイ関連の設定変更作業が終わったら、feature/deployment_setupにコミットしてmainにマージ
+
+mainブランチはすぐにでもデプロイできるブランチ
