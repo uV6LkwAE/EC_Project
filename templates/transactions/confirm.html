@@ -1,0 +1,9 @@
+
+<form method="post">
+    {% csrf_token %}
+    <h2>商品: {{ product.title }}</h2>
+    <p>価格: {{ product.price }}円</p>
+    <label for="shipping_address">配送先:</label>
+    <textarea id="shipping_address" name="shipping_address" required></textarea>
+    <button type="submit">購入を確定する</button>
+</form>
