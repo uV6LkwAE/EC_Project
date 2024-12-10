@@ -13,16 +13,13 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent 
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -104,18 +101,6 @@ WSGI_APPLICATION = 'EC_Project.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ec_project_db',           # 使用するデータベース名
-        'USER': 'ec_user',      # PostgreSQLのユーザー名
-        'PASSWORD': 'ec_user',       # PostgreSQLのパスワード
-        'HOST': 'localhost',               # ホスト名（ローカルで実行する場合は 'localhost'）
-        'PORT': '5432',                    # PostgreSQLのデフォルトポート
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
