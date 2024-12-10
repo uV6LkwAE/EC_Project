@@ -4,28 +4,31 @@
 {% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>プロフィール編集</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                <ul>
-                    <!-- フィールドの内容を検証し、エラーの内容を表示 -->
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <li>{{ field.label }}: {{ error }}</li>
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="p-5 rounded shadow" style="width: 100%; max-width: 500px; background-color: rgba(0, 0, 0, 0.1); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);">
+        <h2 class="text-center text-black mb-4">プロフィール編集</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- エラーメッセージ -->
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">保存する</button>
-    </form>
-    <a href="{% url 'accounts:profile' %}" class="btn btn-secondary mt-3">戻る</a>
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <!-- フォーム内容 -->
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100">保存する</button>
+        </form>
+        <a href="{% url 'accounts:profile' %}" class="btn btn-secondary w-100 mt-3">戻る</a>
+    </div>
 </div>
 {% endblock %}
