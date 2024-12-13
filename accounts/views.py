@@ -8,6 +8,12 @@ from django.contrib.auth.views import LoginView, LogoutView  # Django標準の�
 from .forms import SignupForm, CustomLoginForm, ProfileEditForm  # カスタムログインフォームをインポート
 from .models import CustomUser
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from transactions.models import Transaction
+from products.models import Product
+
+
 # サインアップビュー
 class SignupView(CreateView):
     model = CustomUser  # CustomUserモデルを使用
@@ -74,3 +80,56 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
     def get_object(self, queryset=None):
         # 現在のログイン中のユーザーを返す
         return self.request.user
+
+# 出品した商品ビュー
+@login_required
+def purchased_items(request):
+    status_filter = request.GET.get('status')  # クエリパラメータで状態を取得
+    transactions = Transaction.objects.filter(buyer=request.user).select_related('product')
+    
+    if status_filter:  # クエリパラメータが指定されている場合はフィルタ
+        transactions = transactions.filter(status=status_filter)
+    
+    data = [
+        {
+            'title': t.product.title,
+            'price': float(t.product.price),
+            'status': t.status,
+        }
+        for t in transactions
+    ]
+    return JsonResponse({'purchased_items': data})
+
+# 購入した商品ビュー
+@login_required
+def sold_items(request):
+    products = Product.objects.filter(seller=request.user)
+    data = [
+        {
+            'title': p.title,
+            'price': float(p.price),
+            'status': p.status,
+        }
+        for p in products
+    ]
+    return JsonResponse({'sold_items': data})
+
+@login_required
+def trading_items(request):
+    # 未発送または発送済みの取引をフィルタリング
+    trading_transactions = Transaction.objects.filter(
+        status__in=['order_confirmed', 'pending', 'shipped']
+    ).select_related('product')
+    
+    # 必要なデータを抽出
+    data = [
+        {
+            'title': transaction.product.title,
+            'price': transaction.product.price,
+            'status': transaction.get_status_display(),
+        }
+        for transaction in trading_transactions
+    ]
+    
+    # JsonResponseで返す
+    return JsonResponse({'trading_items': data})

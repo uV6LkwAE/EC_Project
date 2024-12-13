@@ -26,11 +26,89 @@
         </div>
         <!-- ボタンリスト -->
         <div class="d-flex justify-content-center gap-3 mt-4">
-            <a href="#" class="btn btn-outline-dark">購入した商品</a>
-            <a href="#" class="btn btn-outline-dark">出品した商品</a>
+            <button id="trading-items-btn" class="btn btn-outline-dark">取引中の商品</button>
+            <button id="purchased-items-btn" class="btn btn-outline-dark">購入した商品</button>
+            <button id="sold-items-btn" class="btn btn-outline-dark">出品した商品</button>
             <a href="#" class="btn btn-outline-dark">フォローリスト</a>
-            <a href="#" class="btn btn-outline-dark">下書き</a>
         </div>
     </div>
+    <!-- 動的にデータを表示するコンテンツエリア -->
+    <div id="dynamic-content" class="mt-5"></div>
 </div>
+
+<script>
+document.getElementById('purchased-items-btn').addEventListener('click', function() {
+    fetch("{% url 'accounts:purchased_items' %}")
+        .then(response => response.json())
+        .then(data => {
+            const contentDiv = document.getElementById('dynamic-content');
+            contentDiv.innerHTML = '<h3>購入した商品</h3>';
+            if (data.purchased_items.length > 0) {
+                data.purchased_items.forEach(item => {
+                    contentDiv.innerHTML += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.title}</h5>
+                                <p class="card-text">価格: ${item.price}円</p>
+                                <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                contentDiv.innerHTML += '<p>購入した商品はありません。</p>';
+            }
+        });
+});
+
+document.getElementById('sold-items-btn').addEventListener('click', function() {
+    fetch("{% url 'accounts:sold_items' %}")
+        .then(response => response.json())
+        .then(data => {
+            const contentDiv = document.getElementById('dynamic-content');
+            contentDiv.innerHTML = '<h3>出品した商品</h3>';
+            if (data.sold_items.length > 0) {
+                data.sold_items.forEach(item => {
+                    contentDiv.innerHTML += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.title}</h5>
+                                <p class="card-text">価格: ${item.price}円</p>
+                                <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                contentDiv.innerHTML += '<p>出品した商品はありません。</p>';
+            }
+        });
+});
+
+document.getElementById('trading-items-btn').addEventListener('click', function() {
+    fetch("{% url 'accounts:trading_items' %}")
+        .then(response => response.json())
+        .then(data => {
+            const contentDiv = document.getElementById('dynamic-content');
+            contentDiv.innerHTML = '<h3>取引中の商品</h3>';
+            if (data.trading_items.length > 0) {
+                data.trading_items.forEach(item => {
+                    contentDiv.innerHTML += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.title}</a></h5>
+                                <p class="card-text">価格: ${item.price}円</p>
+                                <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                contentDiv.innerHTML += '<p>取引中の商品はありません。</p>';
+            }
+        });
+});
+
+
+</script>
 {% endblock %}

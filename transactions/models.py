@@ -5,6 +5,7 @@ from products.models import Product
 
 class Transaction(models.Model):
     STATUS_CHOICES = [
+        ('order_confirmed', '注文確定'),
         ('pending', '未発送'),
         ('shipped', '発送済み'),
         ('received', '受け取り完了'),
