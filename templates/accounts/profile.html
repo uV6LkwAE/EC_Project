@@ -37,6 +37,7 @@
 </div>
 
 <script>
+// 購入した商品
 document.getElementById('purchased-items-btn').addEventListener('click', function() {
     fetch("{% url 'accounts:purchased_items' %}")
         .then(response => response.json())
@@ -48,7 +49,9 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
                     contentDiv.innerHTML += `
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h5 class="card-title">${item.title}</h5>
+                                <h5 class="card-title">
+                                    <a href="/products/${item.id}/">${item.title}</a>
+                                </h5>
                                 <p class="card-text">価格: ${item.price}円</p>
                                 <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
                             </div>
@@ -61,6 +64,7 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
         });
 });
 
+// 出品した商品
 document.getElementById('sold-items-btn').addEventListener('click', function() {
     fetch("{% url 'accounts:sold_items' %}")
         .then(response => response.json())
@@ -72,7 +76,9 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
                     contentDiv.innerHTML += `
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h5 class="card-title">${item.title}</h5>
+                                <h5 class="card-title">
+                                    <a href="/products/${item.id}/">${item.title}</a>
+                                </h5>
                                 <p class="card-text">価格: ${item.price}円</p>
                                 <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
                             </div>
@@ -85,6 +91,7 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
         });
 });
 
+// 取引中の商品
 document.getElementById('trading-items-btn').addEventListener('click', function() {
     fetch("{% url 'accounts:trading_items' %}")
         .then(response => response.json())
@@ -96,7 +103,9 @@ document.getElementById('trading-items-btn').addEventListener('click', function(
                     contentDiv.innerHTML += `
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h5 class="card-title">${item.title}</a></h5>
+                                <h5 class="card-title">
+                                    <a href="/transactions/detail/${item.id}/">${item.title}</a>
+                                </h5>
                                 <p class="card-text">価格: ${item.price}円</p>
                                 <p class="card-text"><small class="text-muted">状態: ${item.status}</small></p>
                             </div>

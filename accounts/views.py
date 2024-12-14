@@ -81,17 +81,19 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
         # 現在のログイン中のユーザーを返す
         return self.request.user
 
-# 出品した商品ビュー
+# 購入した商品ビュー
+# 'received', '受け取り完了'した商品
 @login_required
 def purchased_items(request):
     status_filter = request.GET.get('status')  # クエリパラメータで状態を取得
     transactions = Transaction.objects.filter(buyer=request.user).select_related('product')
     
-    if status_filter:  # クエリパラメータが指定されている場合はフィルタ
-        transactions = transactions.filter(status=status_filter)
+    if status_filter:
+        transactions = Transaction.objects.filter(buyer=request.user).filter(status=status_filter)
     
     data = [
         {
+            'id': t.id,
             'title': t.product.title,
             'price': float(t.product.price),
             'status': t.status,
@@ -100,12 +102,13 @@ def purchased_items(request):
     ]
     return JsonResponse({'purchased_items': data})
 
-# 購入した商品ビュー
+# 出品した商品ビュー
 @login_required
 def sold_items(request):
     products = Product.objects.filter(seller=request.user)
     data = [
         {
+            'id': p.id,
             'title': p.title,
             'price': float(p.price),
             'status': p.status,
@@ -114,6 +117,7 @@ def sold_items(request):
     ]
     return JsonResponse({'sold_items': data})
 
+# 取引中の商品ビュー
 @login_required
 def trading_items(request):
     # 未発送または発送済みの取引をフィルタリング
@@ -124,6 +128,7 @@ def trading_items(request):
     # 必要なデータを抽出
     data = [
         {
+            'id': transaction.id,
             'title': transaction.product.title,
             'price': transaction.product.price,
             'status': transaction.get_status_display(),
