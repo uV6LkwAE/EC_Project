@@ -9,87 +9,9 @@ from .models import Product, ProductImage, Favorite
 from .forms import ProductForm
 import json
 from django.http import JsonResponse
+from django.http import HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 import logging
-
-# class ProductCreateView(LoginRequiredMixin, CreateView):
-#     model = Product
-#     form_class = ProductForm
-#     template_name = 'products/product_create.html'
-
-#     def form_valid(self, form):
-#         # 商品の基本情報を保存
-#         self.object = form.save(commit=False)
-#         self.object.seller = self.request.user
-#         self.object.save()
-
-#         # 新しい画像を取得
-#         new_images = self.request.FILES.getlist('images')
-
-#         # 削除対象の画像を取得
-#         deleted_images = self.request.POST.get('deleted_images', '[]')
-#         try:
-#             deleted_images = json.loads(deleted_images)
-#             logger.debug(f"Received deleted images data: {deleted_images}")
-#         except json.JSONDecodeError:
-#             deleted_images = []
-#             logger.error(f"Invalid deleted images data: {deleted_images}")
-
-#         # 並び順データを取得
-#         order_data = self.request.POST.get('order_data', '[]')
-#         try:
-#             order_data = json.loads(order_data)
-#             logger.debug(f"Received order data: {order_data}")
-#         except json.JSONDecodeError:
-#             order_data = []
-#             logger.error(f"Invalid order data: {order_data}")
-
-#         # 制約チェック
-#         error_messages = []
-
-#         # 1. 削除後の合計枚数チェック
-#         remaining_images = [img for idx, img in enumerate(new_images) if idx not in deleted_images]
-#         if len(remaining_images) > 10:  # 上限10枚
-#             error_messages.append(
-#                 f"画像は合計10枚までアップロード可能です（現在{len(remaining_images)}枚アップロードしようとしています）。"
-#             )
-
-#         # 2. 各画像のサイズチェック
-#         for image in remaining_images:
-#             if image.size > 10 * 1024 * 1024:  # 10MB制限
-#                 error_messages.append(f"画像「{image.name}」のサイズが10MBを超えています。")
-
-#         # エラーがあればテンプレートに表示
-#         if error_messages:
-#             for message in error_messages:
-#                 form.add_error(None, message)  # フォームにエラーメッセージを追加
-#             return self.form_invalid(form)
-
-#         # 残った画像を保存
-#         for image in remaining_images:
-#             ProductImage.objects.create(
-#                 product=self.object,
-#                 image=image,
-#                 order=self.object.images.count()  # 順序を指定
-#             )
-
-#         return super().form_valid(form)
-
-#     def get_success_url(self):
-#         if self.object:
-#             return reverse('products:product_detail', kwargs={'pk': self.object.pk})
-#         return reverse('products:product_list')  # フォールバックとして商品一覧にリダイレクト
-    
-#     # No.008 デバッグ
-#     # def get_context_data(self, **kwargs):
-#     #     context = super().get_context_data(**kwargs)
-
-        
-#     #     print("フォームのクラス:", self.form_class.__name__)
-#     #     print("Category Choices:", self.form_class.base_fields['category'].choices)
-#     #     print("Condition Choices:", self.form_class.base_fields['condition'].choices)
-
-#     #     return context
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -186,6 +108,13 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
     form_class = ProductForm
     template_name = 'products/product_edit.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        # 商品が購入済みか確認
+        product = self.get_object()
+        if product.status == 'sold_out':
+            return HttpResponseForbidden("この商品は購入されているため編集できません。")
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         # フォームの基本情報を保存
         self.object = form.save()
@@ -280,7 +209,15 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'products/product_delete.html'
     success_url = reverse_lazy('products:product_list')
 
+    def dispatch(self, request, *args, **kwargs):
+        # 商品が購入済みか確認
+        product = self.get_object()
+        if product.status == 'sold_out':
+            return HttpResponseForbidden("この商品は購入されているため削除できません。")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
+        # ログイン中のユーザーが出品者の商品だけを取得
         return super().get_queryset().filter(seller=self.request.user)
 
 

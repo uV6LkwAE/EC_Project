@@ -67,16 +67,34 @@
                 <p class="mt-2">お気に入り登録数: {{ product.favorited_by.count }}</p>
             </div>
 
+
             <!-- 購入ボタン -->
-            {% if user.is_authenticated and product.seller != user and product.status == "available" %}
-                <a href="{% url 'transactions:initiate_transaction' product.id %}" class="btn btn-success mt-3">購入する</a>
+            {% if user.is_authenticated and product.seller != user %}
+                {% if product.status == "available" %}
+                    <!-- 商品が購入可能な場合 -->
+                    <a href="{% url 'transactions:initiate_transaction' product.id %}" class="btn btn-success mt-3">購入する</a>
+                {% else %}
+                    <!-- 商品が購入できない場合（購入済みや売り切れ） -->
+                    <button class="btn btn-success mt-3" disabled style="opacity: 0.6; cursor: not-allowed;">購入する</button>
+                    <p class="text-muted mt-2">この商品は購入できません。</p>
+                {% endif %}
             {% endif %}
-            
+
             <!-- 出品者用の操作リンク -->
             {% if user.is_authenticated and product.seller == user %}
-                <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning">編集する</a>
-                <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger">削除する</a>
+                {% if product.status != 'sold_out' %}
+                    <!-- 商品が購入されていない場合 -->
+                    <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning">編集する</a>
+                    <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger">削除する</a>
+                {% else %}
+                    <!-- 商品が購入済みの場合 -->
+                    <button class="btn btn-warning" disabled style="opacity: 0.6; cursor: not-allowed;">編集する</button>
+                    <button class="btn btn-danger" disabled style="opacity: 0.6; cursor: not-allowed;">削除する</button>
+                    <p class="text-muted mt-2">この商品は購入されているため編集や削除はできません。</p>
+                {% endif %}
             {% endif %}
+
+
         </div>
     </div>
 </div>
