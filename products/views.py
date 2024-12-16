@@ -221,15 +221,26 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         return super().get_queryset().filter(seller=self.request.user)
 
 
+from django.http import HttpResponseForbidden
+
 @login_required
 def toggle_favorite(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+    # 出品者自身や売り切れた商品をお気に入りに追加できないように制御
+    if product.seller == request.user:
+        return HttpResponseForbidden("自身の商品はお気に入りに追加できません。")
+    if product.status == 'sold_out':
+        return HttpResponseForbidden("売り切れた商品はお気に入りに追加できません。")
+
+    # お気に入り追加・解除
     favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
 
     if not created:
         favorite.delete()
 
     return redirect('products:product_detail', pk=product.id)
+
 
 
 @login_required
