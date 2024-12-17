@@ -67,3 +67,14 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} -> {self.product.title}"
+
+
+class Comment(models.Model):
+    product = models.ForeignKey(Product, related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    reply_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.product}"

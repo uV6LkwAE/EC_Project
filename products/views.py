@@ -5,8 +5,9 @@ from django.views.generic import CreateView, UpdateView, ListView, DetailView, D
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
-from .models import Product, ProductImage, Favorite
+from .models import Product, ProductImage, Favorite, Comment
 from .forms import ProductForm
+from django import forms
 import json
 from django.http import JsonResponse
 from django.http import HttpResponseForbidden
@@ -188,20 +189,86 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
 #     paginate_by = 10  # ページネーション
 
 
+# class ProductDetailView(DetailView):
+#     model = Product
+#     template_name = 'products/product_detail.html'
+#     context_object_name = 'product'
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         if self.request.user.is_authenticated:
+#             context['is_favorited'] = Favorite.objects.filter(
+#                 user=self.request.user, product=self.object
+#             ).exists()
+#         else:
+#             context['is_favorited'] = False
+#         return context
+
+
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'products/product_detail.html'
     context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
+        # 親クラスのget_context_dataを呼び出し
         context = super().get_context_data(**kwargs)
+        product = self.object  # 現在表示されている商品を取得
+
+        # 親コメントを取得（reply_to=Noneでフィルタリング）
+        # リプライを含まない、最初のコメント
+        comments = product.comments.filter(reply_to=None)
+
+        # コメントフォームを取得（ユーザーが認証されている場合）
+        # ユーザーがログインしている場合、CommentFormを作成し、コンテキストに追加する
         if self.request.user.is_authenticated:
-            context['is_favorited'] = Favorite.objects.filter(
-                user=self.request.user, product=self.object
-            ).exists()
-        else:
-            context['is_favorited'] = False
+            form = CommentForm()
+            context['form'] = form
+
+        # コメントをコンテキストに追加
+        context['comments'] = comments
         return context
+
+    def post(self, request, *args, **kwargs):
+        # 商品詳細ページに対するPOSTリクエスト（コメント投稿）
+        product = self.get_object()
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            # コメントを一時的に保存
+            comment = form.save(commit=False)
+            # コメントがどの商品のものか指定
+            comment.product = product
+            # 現在のユーザーをコメントの作成者として保存
+            comment.user = request.user  
+
+            # リプライがあれば、リプライ先のコメントを指定
+            # リプライ先のコメントIDを数値に変換して設定
+            reply_to = form.cleaned_data.get('reply_to')
+
+            print(f"リプライ先のコメントID: {reply_to}")  # ログを追加
+
+            if reply_to:
+                if isinstance(reply_to, Comment):
+                    # reply_toがすでにCommentオブジェクトの場合、そのまま使用
+                    comment.reply_to = reply_to
+                else:
+                    try:
+                        # reply_toをIDで取得
+                        comment.reply_to = Comment.objects.get(id=int(reply_to))  # ここでIDを使ってCommentオブジェクトを取得
+                    except ValueError:
+                        print(f"Invalid reply_to value: {reply_to}")
+                    except Comment.DoesNotExist:
+                        print(f"Comment with id {reply_to} does not exist.")
+            
+            # コメントを保存
+            comment.save()
+
+            # コメント投稿後、同じ商品ページにリダイレクト
+            return redirect('products:product_detail', pk=product.pk)
+
+        # フォームが無効な場合、再度商品詳細ページを表示
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
@@ -221,7 +288,20 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         return super().get_queryset().filter(seller=self.request.user)
 
 
-from django.http import HttpResponseForbidden
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content', 'reply_to']  # reply_toフィールドを追加
+
+    # reply_toフィールドをフォームに追加（リプライ元のコメント）
+    reply_to = forms.ModelChoiceField(
+        queryset=Comment.objects.all(),
+        required=False,  # リプライでない場合は不要
+        widget=forms.HiddenInput(),  # フォーム上では表示しない
+    )
+
+
+
 
 @login_required
 def toggle_favorite(request, product_id):
