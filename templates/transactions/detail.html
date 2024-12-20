@@ -1,4 +1,9 @@
 
+{% extends "base.html" %}
+
+{% block title %}取引画面{% endblock %}
+
+{% block content %}
 <h2>取引詳細</h2>
 <p>商品: {{ transaction.product.title }}</p>
 <p>価格: ¥{{ transaction.product.price }}</p>
@@ -29,3 +34,4 @@
     <button type="submit" class="btn btn-success">商品を受け取る</button>
 </form>
 {% endif %}
+{% endblock %}

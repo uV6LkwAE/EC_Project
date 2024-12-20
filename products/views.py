@@ -5,91 +5,14 @@ from django.views.generic import CreateView, UpdateView, ListView, DetailView, D
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
-from .models import Product, ProductImage, Favorite
+from .models import Product, ProductImage, Favorite, Comment
 from .forms import ProductForm
+from django import forms
 import json
 from django.http import JsonResponse
+from django.http import HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 import logging
-
-# class ProductCreateView(LoginRequiredMixin, CreateView):
-#     model = Product
-#     form_class = ProductForm
-#     template_name = 'products/product_create.html'
-
-#     def form_valid(self, form):
-#         # 商品の基本情報を保存
-#         self.object = form.save(commit=False)
-#         self.object.seller = self.request.user
-#         self.object.save()
-
-#         # 新しい画像を取得
-#         new_images = self.request.FILES.getlist('images')
-
-#         # 削除対象の画像を取得
-#         deleted_images = self.request.POST.get('deleted_images', '[]')
-#         try:
-#             deleted_images = json.loads(deleted_images)
-#             logger.debug(f"Received deleted images data: {deleted_images}")
-#         except json.JSONDecodeError:
-#             deleted_images = []
-#             logger.error(f"Invalid deleted images data: {deleted_images}")
-
-#         # 並び順データを取得
-#         order_data = self.request.POST.get('order_data', '[]')
-#         try:
-#             order_data = json.loads(order_data)
-#             logger.debug(f"Received order data: {order_data}")
-#         except json.JSONDecodeError:
-#             order_data = []
-#             logger.error(f"Invalid order data: {order_data}")
-
-#         # 制約チェック
-#         error_messages = []
-
-#         # 1. 削除後の合計枚数チェック
-#         remaining_images = [img for idx, img in enumerate(new_images) if idx not in deleted_images]
-#         if len(remaining_images) > 10:  # 上限10枚
-#             error_messages.append(
-#                 f"画像は合計10枚までアップロード可能です（現在{len(remaining_images)}枚アップロードしようとしています）。"
-#             )
-
-#         # 2. 各画像のサイズチェック
-#         for image in remaining_images:
-#             if image.size > 10 * 1024 * 1024:  # 10MB制限
-#                 error_messages.append(f"画像「{image.name}」のサイズが10MBを超えています。")
-
-#         # エラーがあればテンプレートに表示
-#         if error_messages:
-#             for message in error_messages:
-#                 form.add_error(None, message)  # フォームにエラーメッセージを追加
-#             return self.form_invalid(form)
-
-#         # 残った画像を保存
-#         for image in remaining_images:
-#             ProductImage.objects.create(
-#                 product=self.object,
-#                 image=image,
-#                 order=self.object.images.count()  # 順序を指定
-#             )
-
-#         return super().form_valid(form)
-
-#     def get_success_url(self):
-#         if self.object:
-#             return reverse('products:product_detail', kwargs={'pk': self.object.pk})
-#         return reverse('products:product_list')  # フォールバックとして商品一覧にリダイレクト
-    
-#     # No.008 デバッグ
-#     # def get_context_data(self, **kwargs):
-#     #     context = super().get_context_data(**kwargs)
-
-        
-#     #     print("フォームのクラス:", self.form_class.__name__)
-#     #     print("Category Choices:", self.form_class.base_fields['category'].choices)
-#     #     print("Condition Choices:", self.form_class.base_fields['condition'].choices)
-
-#     #     return context
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -186,6 +109,13 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
     form_class = ProductForm
     template_name = 'products/product_edit.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        # 商品が購入済みか確認
+        product = self.get_object()
+        if product.status == 'sold_out':
+            return HttpResponseForbidden("この商品は購入されているため編集できません。")
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         # フォームの基本情報を保存
         self.object = form.save()
@@ -259,20 +189,86 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
 #     paginate_by = 10  # ページネーション
 
 
+# class ProductDetailView(DetailView):
+#     model = Product
+#     template_name = 'products/product_detail.html'
+#     context_object_name = 'product'
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         if self.request.user.is_authenticated:
+#             context['is_favorited'] = Favorite.objects.filter(
+#                 user=self.request.user, product=self.object
+#             ).exists()
+#         else:
+#             context['is_favorited'] = False
+#         return context
+
+
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'products/product_detail.html'
     context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
+        # 親クラスのget_context_dataを呼び出し
         context = super().get_context_data(**kwargs)
+        product = self.object  # 現在表示されている商品を取得
+
+        # 親コメントを取得（reply_to=Noneでフィルタリング）
+        # リプライを含まない、最初のコメント
+        comments = product.comments.filter(reply_to=None)
+
+        # コメントフォームを取得（ユーザーが認証されている場合）
+        # ユーザーがログインしている場合、CommentFormを作成し、コンテキストに追加する
         if self.request.user.is_authenticated:
-            context['is_favorited'] = Favorite.objects.filter(
-                user=self.request.user, product=self.object
-            ).exists()
-        else:
-            context['is_favorited'] = False
+            form = CommentForm()
+            context['form'] = form
+
+        # コメントをコンテキストに追加
+        context['comments'] = comments
         return context
+
+    def post(self, request, *args, **kwargs):
+        # 商品詳細ページに対するPOSTリクエスト（コメント投稿）
+        product = self.get_object()
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            # コメントを一時的に保存
+            comment = form.save(commit=False)
+            # コメントがどの商品のものか指定
+            comment.product = product
+            # 現在のユーザーをコメントの作成者として保存
+            comment.user = request.user  
+
+            # リプライがあれば、リプライ先のコメントを指定
+            # リプライ先のコメントIDを数値に変換して設定
+            reply_to = form.cleaned_data.get('reply_to')
+
+            print(f"リプライ先のコメントID: {reply_to}")  # ログを追加
+
+            if reply_to:
+                if isinstance(reply_to, Comment):
+                    # reply_toがすでにCommentオブジェクトの場合、そのまま使用
+                    comment.reply_to = reply_to
+                else:
+                    try:
+                        # reply_toをIDで取得
+                        comment.reply_to = Comment.objects.get(id=int(reply_to))  # ここでIDを使ってCommentオブジェクトを取得
+                    except ValueError:
+                        print(f"Invalid reply_to value: {reply_to}")
+                    except Comment.DoesNotExist:
+                        print(f"Comment with id {reply_to} does not exist.")
+            
+            # コメントを保存
+            comment.save()
+
+            # コメント投稿後、同じ商品ページにリダイレクト
+            return redirect('products:product_detail', pk=product.pk)
+
+        # フォームが無効な場合、再度商品詳細ページを表示
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
@@ -280,19 +276,51 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'products/product_delete.html'
     success_url = reverse_lazy('products:product_list')
 
+    def dispatch(self, request, *args, **kwargs):
+        # 商品が購入済みか確認
+        product = self.get_object()
+        if product.status == 'sold_out':
+            return HttpResponseForbidden("この商品は購入されているため削除できません。")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
+        # ログイン中のユーザーが出品者の商品だけを取得
         return super().get_queryset().filter(seller=self.request.user)
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content', 'reply_to']  # reply_toフィールドを追加
+
+    # reply_toフィールドをフォームに追加（リプライ元のコメント）
+    reply_to = forms.ModelChoiceField(
+        queryset=Comment.objects.all(),
+        required=False,  # リプライでない場合は不要
+        widget=forms.HiddenInput(),  # フォーム上では表示しない
+    )
+
+
 
 
 @login_required
 def toggle_favorite(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+    # 出品者自身や売り切れた商品をお気に入りに追加できないように制御
+    if product.seller == request.user:
+        return HttpResponseForbidden("自身の商品はお気に入りに追加できません。")
+    if product.status == 'sold_out':
+        return HttpResponseForbidden("売り切れた商品はお気に入りに追加できません。")
+
+    # お気に入り追加・解除
     favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
 
     if not created:
         favorite.delete()
 
     return redirect('products:product_detail', pk=product.id)
+
 
 
 @login_required
