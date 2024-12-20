@@ -5,17 +5,8 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>商品一覧</h2>
-    <!-- 簡易検索フォーム -->
-    <form class="mb-3" method="get" action="{% url 'products:product_list' %}">
-        <div class="input-group">
-            <input type="text" name="q" id="simple-search" class="form-control search-box" placeholder="何をお探しですか？" value="{{ request.GET.q }}">
-            <button type="submit" class="btn btn-outline-primary" id="simple-search-button">絞り込む</button>
-            <button type="button" class="btn btn-outline-secondary" id="toggle-advanced-search">詳細検索</button>
-        </div>
-    </form>
-
     <!-- 商品一覧 -->
+    <h2>商品一覧</h2>
     <div class="row">
         {% for product in products %}
             <div class="col-md-4 mb-4">
@@ -60,60 +51,6 @@
                 {% endif %}
             </ul>
         {% endif %}
-    </div>
-</div>
-
-<!-- 詳細検索モーダル -->
-<div id="searchModal" class="search-modal">
-    <div class="search-modal-content">
-        <span id="closeSearchModal" class="search-modal-close">&times;</span>
-        <h2>商品検索</h2>
-        <form method="get" action="{% url 'products:product_list' %}">
-            <label for="minPrice">最低価格:</label>
-            <input type="text" id="minPrice" name="min_price" placeholder="例: 1000" class="form-control">
-
-            <label for="maxPrice">最高価格:</label>
-            <input type="text" id="maxPrice" name="max_price" placeholder="例: 10000" class="form-control">
-
-            <label for="condition">状態:</label>
-            <select id="condition" name="condition" class="form-select">
-                <option value="">選択してください</option>
-                <option value="new">新品</option>
-                <option value="used">中古</option>
-            </select>
-
-            <label for="status">ステータス:</label>
-            <select id="status" name="status" class="form-select">
-                <option value="">選択してください</option>
-                <option value="available">販売中</option>
-                <option value="sold">売り切れ</option>
-            </select>
-
-            <label for="category">カテゴリー:</label>
-            <select id="category" name="category" class="form-select">
-                <option value="">選択してください</option>
-                <option value="electronics">電子機器</option>
-                <option value="furniture">家具</option>
-                <option value="clothing">衣料品</option>
-            </select>
-
-            <label for="title">タイトル:</label>
-            <input type="text" id="title" name="title" placeholder="商品タイトルを入力" class="form-control">
-
-            <label for="includeKeywords">キーワード（必ず含む）:</label>
-            <input type="text" id="includeKeywords" name="include_keywords" placeholder="例: 高級" class="form-control">
-
-            <label for="excludeKeywords">キーワード（含まない）:</label>
-            <input type="text" id="excludeKeywords" name="exclude_keywords" placeholder="例: 安価" class="form-control">
-
-            <label for="username">ユーザー名:</label>
-            <input type="text" id="username" name="user" placeholder="ユーザー名を入力" class="form-control">
-
-            <label for="excludeUser">特定のユーザーを非表示:</label>
-            <input type="text" id="excludeUser" name="exclude_user" placeholder="非表示にするユーザー名" class="form-control">
-
-            <button type="submit" class="btn btn-primary mt-3">検索</button>
-        </form>
     </div>
 </div>
 

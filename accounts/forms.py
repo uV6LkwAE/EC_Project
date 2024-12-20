@@ -46,4 +46,4 @@ class CustomLoginForm(AuthenticationForm):
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'nickname', 'email', 'age', 'address', 'icon')  # 編集可能なフィールド
+        fields = ('username', 'email', 'age', 'address', 'icon')  # 編集可能なフィールド
