@@ -55,4 +55,20 @@ def update_transaction_status(request, transaction_id):
 @login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
-    return render(request, 'transactions/detail.html', {'transaction': transaction})
+    
+    # ステータスに応じた進行具合を計算
+    if transaction.status == 'order_confirmed':
+        progress_percentage = 0  # 注文確定は0%
+    elif transaction.status == 'pending':
+        progress_percentage = 25  # 未発送は25%
+    elif transaction.status == 'shipped':
+        progress_percentage = 75  # 発送済みは75%
+    elif transaction.status == 'received':
+        progress_percentage = 100  # 受け取り完了は100%
+    else:
+        progress_percentage = 0  # デフォルト値
+
+    return render(request, 'transactions/detail.html', {
+        'transaction': transaction,
+        'progress_percentage': progress_percentage,
+    })
