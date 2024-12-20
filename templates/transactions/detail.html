@@ -1,7 +1,7 @@
 
 {% extends "base.html" %}
 
-{% block title %}取引画面{% endblock %}
+{% block title %}取引詳細{% endblock %}
 
 {% block content %}
 <h2>取引詳細</h2>
@@ -12,26 +12,81 @@
 <p>配送先: {{ transaction.shipping_address }}</p>
 <p>ステータス: {{ transaction.get_status_display }}</p>
 
-<!-- 購入者用メッセージ -->
-{% if user == transaction.buyer and transaction.status == "pending" %}
-<p>商品が発送されるまでお待ちください。</p>
-{% endif %}
+<ul class="progressbar">
+    <li class="{% if progress_percentage >= 0 %}active{% endif %}">注文確定</li>
+    <li class="{% if progress_percentage >= 25 %}active{% endif %} {% if progress_percentage >= 50 %}complete{% endif %}">未発送</li>
+    <li class="{% if progress_percentage >= 75 %}active{% endif %} {% if progress_percentage >= 100 %}complete{% endif %}">発送済み</li>
+    <li class="{% if progress_percentage == 100 %}active{% endif %}">受け取り完了</li>
+</ul>
 
-<!-- 出品者用のボタン -->
-{% if user == transaction.seller and transaction.status == "pending" %}
-<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
-    {% csrf_token %}
-    <input type="hidden" name="status" value="shipped">
-    <button type="submit" class="btn btn-primary">発送完了</button>
-</form>
-{% endif %}
+<style>
+    .progressbar {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+        list-style-type: none;
+    }
 
-<!-- 購入者用のボタン -->
-{% if user == transaction.buyer and transaction.status == "shipped" %}
-<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
-    {% csrf_token %}
-    <input type="hidden" name="status" value="received">
-    <button type="submit" class="btn btn-success">商品を受け取る</button>
-</form>
-{% endif %}
+    .progressbar li {
+        position: relative;
+        text-align: center;
+        text-transform: uppercase;
+        width: 25%; /* ステップごとの幅を25%に設定 */
+        color: #999999;
+        font-weight: bold;
+    }
+
+    .progressbar li:before {
+        display: block;
+        width: 18px;
+        height: 18px;
+        margin: 7px auto 20px auto;
+        content: '';
+        text-align: center;
+        border-radius: 50%;
+        background-color: #F5F5F5;
+    }
+
+    .progressbar li:after {
+        position: absolute;
+        z-index: -1;
+        top: 15px;
+        left: -50%;
+        width: 100%;
+        height: 2px;
+        content: '';
+        background-color: #F5F5F5;
+    }
+
+    .progressbar li:first-child:after {
+        content: none;
+    }
+
+    .progressbar li.active,
+    .progressbar li.complete {
+        color: #0070BD;
+    }
+
+    .progressbar li.active:before,
+    .progressbar li.complete:before {
+        background-color: #0070BD;
+    }
+
+    .progressbar li.active:after,
+    .progressbar li.complete:after {
+        background-color: #0070BD;
+    }
+
+    ul {
+    margin: 40px 0 !important;
+    }
+
+    body {
+    margin: 40px 20px;
+    }
+
+</style>
+
 {% endblock %}
