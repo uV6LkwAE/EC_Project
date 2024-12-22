@@ -212,10 +212,13 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        product = self.object  # 現在表示されている商品を取得
+        product = self.get_object()  # 現在表示されている商品を取得
+        self.object = product
+        print(f"Product in context: {product}")  # デバッグログ
 
         # 親コメントを取得
         comments = product.comments.filter(reply_to=None)
+        print("Comments in context: ", comments)
 
         # コメントフォームを取得
         if self.request.user.is_authenticated:
@@ -236,6 +239,8 @@ class ProductDetailView(DetailView):
     def post(self, request, *args, **kwargs):
         # 商品詳細ページに対するPOSTリクエスト（コメント投稿）
         product = self.get_object()
+        self.object = product
+        print(f"Product object: {product}")  # デバッグログ
         form = CommentForm(request.POST)
 
         if form.is_valid():
@@ -272,6 +277,7 @@ class ProductDetailView(DetailView):
             return redirect('products:product_detail', pk=product.pk)
 
         # フォームが無効な場合、再度商品詳細ページを表示
+        print(f"Form errors: {form.errors}") 
         return self.render_to_response(self.get_context_data(form=form))
 
 

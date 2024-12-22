@@ -20,6 +20,34 @@
         const modal = new bootstrap.Modal(document.getElementById('commentModal'));
         modal.show();
     }
+
+    function toggleRepliesInModal(commentId) {
+        const repliesDiv = document.getElementById('replies-' + commentId);  // リプライ部分
+        const replyForm = document.getElementById('reply-form-' + commentId);  // 返信フォーム
+
+        // スレッド（リプライ）の表示/非表示をトグル
+        console.log("Replies Div: ", repliesDiv);  // デバッグ用
+        if (repliesDiv && repliesDiv.style) {
+            if (repliesDiv.style.display === 'none' || repliesDiv.style.display === '') {
+                repliesDiv.style.display = 'block';
+                repliesDiv.style.height = repliesDiv.scrollHeight + 'px'; // スムーズに展開
+            } else {
+                repliesDiv.style.display = 'none';
+                repliesDiv.style.height = '0'; // 非表示にする
+            }
+        }
+
+        // 返信フォームの表示/非表示をトグル
+        if (replyForm && replyForm.style) {
+            if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+                replyForm.style.display = 'block';
+            } else {
+                replyForm.style.display = 'none';
+            }
+        }
+    }
+
+
 </script>
 
 <div class="container mt-5">
@@ -95,25 +123,32 @@
                 {% if user.is_authenticated and product.seller == user %}
                     {% if product.status == "available" %}
                         <!-- 販売中の場合 -->
-                        <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning" data-bs-toggle="tooltip" title="商品を編集">編集</a>
+                        <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning" data-bs-toggle="tooltip" title="商品を編集">
+                            <i class="bi bi-pencil-square"></i> 編集
+                        </a>
                     {% else %}
                         <!-- 売り切れの場合は無効化 -->
                         <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="売り切れ商品のため編集できません">
-                            <button class="btn btn-warning" style="pointer-events: none;" disabled>編集</button>
+                            <button class="btn btn-warning" style="pointer-events: none;" disabled>
+                                <i class="bi bi-pencil-square"></i> 編集
+                            </button>
                         </span>
                     {% endif %}
                 {% endif %}
-
 
                 <!-- 削除ボタン -->
                 {% if user.is_authenticated and product.seller == user %}
                     {% if product.status == "available" %}
                         <!-- 販売中の場合 -->
-                        <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger" data-bs-toggle="tooltip" title="商品を削除">削除</a>
+                        <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger" data-bs-toggle="tooltip" title="商品を削除">
+                            <i class="bi bi-trash3"></i> 削除
+                        </a>
                     {% else %}
                         <!-- 売り切れの場合 -->
                         <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="売り切れ商品のため削除できません">
-                            <button class="btn btn-danger" style="pointer-events: none;" disabled>削除</button>
+                            <button class="btn btn-danger" style="pointer-events: none;" disabled>
+                                <i class="bi bi-trash3"></i> 削除
+                            </button>
                         </span>
                     {% endif %}
                 {% endif %}
@@ -169,17 +204,32 @@
             <div class="modal-body">
                 <form method="POST">
                     {% csrf_token %}
-                    <textarea class="form-control" name="comment" placeholder="コメントを投稿"></textarea>
+                    <textarea class="form-control" name="content" placeholder="コメントを投稿"></textarea>
                     <button type="submit" class="btn btn-primary mt-3">投稿する</button>
                 </form>
 
-                <div id="all-comments">
+
+
+                <div id="comments">
                     {% for comment in comments %}
-                        <div class="comment mt-3" style="background-color: #f1f1f1; padding: 10px; border-radius: 8px;">
+                        <div class="comment mt-3" 
+                             id="comment-{{ comment.id }}" 
+                             style="background-color: #f1f1f1; padding: 10px; border-radius: 8px; max-height: none; overflow: visible; transition: max-height 0.5s ease-in-out;">
                             <p><strong>{{ comment.user.username }}</strong>: {{ comment.content }}</p>
                             <p><em>{{ comment.created_at }}</em></p>
-                            <button class="btn btn-link" data-bs-toggle="collapse" data-bs-target="#replies-{{ comment.id }}" aria-expanded="false" aria-controls="replies-{{ comment.id }}">返信</button>
-                            <div id="replies-{{ comment.id }}" class="collapse">
+                
+                            <!-- スレッド用展開ボタン -->
+                            <button class="btn btn-link" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#replies-{{ comment.id }}" 
+                                    aria-expanded="false" 
+                                    aria-controls="replies-{{ comment.id }}" 
+                                    onclick="toggleRepliesInModal({{ comment.id }})">
+                                {{ comment.replies.count }}件の返信
+                            </button>
+                
+                            <!-- リプライの表示 -->
+                            <div class="replies" id="replies-{{ comment.id }}" style="display:none; margin-top: 10px; height: 0; transition: height 0.5s ease-in-out;">
                                 {% for reply in comment.replies.all %}
                                     <div class="reply" style="background-color: white; padding: 10px; margin-top: 5px; border-left: 4px solid blue; border-bottom: 1px solid #ccc;">
                                         <p><strong>{{ reply.user.username }}</strong>: {{ reply.content }}</p>
@@ -189,9 +239,25 @@
                                     <p>このコメントにはリプライはありません。</p>
                                 {% endfor %}
                             </div>
+                
+                            <!-- 返信フォーム -->
+                            <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display:none; margin-top: 10px;">
+                                <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="reply_to" value="{{ comment.id }}">
+                                    <div class="input-group">
+                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" style="height: 40px;"></textarea>
+                                        <button type="submit" class="btn btn-primary input-group-append">返信する</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
+                    {% empty %}
+                        <p>コメントはまだありません。</p>
                     {% endfor %}
                 </div>
+                
+                
             </div>
         </div>
     </div>
@@ -240,6 +306,9 @@
         border-left: 4px solid blue;
         border-bottom: 1px solid #ccc;
     }
+
+
+
 </style>
 
 {% endblock %}
