@@ -211,23 +211,27 @@ class ProductDetailView(DetailView):
     context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
-        # 親クラスのget_context_dataを呼び出し
         context = super().get_context_data(**kwargs)
         product = self.object  # 現在表示されている商品を取得
 
-        # 親コメントを取得（reply_to=Noneでフィルタリング）
-        # リプライを含まない、最初のコメント
+        # 親コメントを取得
         comments = product.comments.filter(reply_to=None)
 
-        # コメントフォームを取得（ユーザーが認証されている場合）
-        # ユーザーがログインしている場合、CommentFormを作成し、コンテキストに追加する
+        # コメントフォームを取得
         if self.request.user.is_authenticated:
             form = CommentForm()
             context['form'] = form
 
-        # コメントをコンテキストに追加
+        # お気に入り判定
+        if self.request.user.is_authenticated:
+            is_favorited = product.favorited_by.filter(user=self.request.user).exists()  # 修正: idではなくuserで検索
+        else:
+            is_favorited = False
+
         context['comments'] = comments
+        context['is_favorited'] = is_favorited 
         return context
+
 
     def post(self, request, *args, **kwargs):
         # 商品詳細ページに対するPOSTリクエスト（コメント投稿）
