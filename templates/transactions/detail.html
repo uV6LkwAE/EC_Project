@@ -12,6 +12,31 @@
 <p>配送先: {{ transaction.shipping_address }}</p>
 <p>ステータス: {{ transaction.get_status_display }}</p>
 
+<p>DEBUG: {{ transaction.status }}</p>
+
+<!-- 購入者用メッセージ -->
+{% if user == transaction.buyer and transaction.status == "pending" %}
+<p>商品が発送されるまでお待ちください。</p>
+{% endif %}
+
+<!-- 出品者用のボタン -->
+{% if user == transaction.seller and transaction.status == "order_confirmed" %}
+<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="shipped">
+    <button type="submit" class="btn btn-primary">発送完了</button>
+</form>
+{% endif %}
+
+<!-- 購入者用のボタン -->
+{% if user == transaction.buyer and transaction.status == "shipped" %}
+<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="received">
+    <button type="submit" class="btn btn-success">商品を受け取る</button>
+</form>
+{% endif %}
+
 <ul class="progressbar">
     <li class="{% if progress_percentage >= 0 %}active{% endif %}">注文確定</li>
     <li class="{% if progress_percentage >= 25 %}active{% endif %} {% if progress_percentage >= 50 %}complete{% endif %}">未発送</li>
