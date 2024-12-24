@@ -218,6 +218,12 @@ class ProductDetailView(DetailView):
         self.object = product
         print(f"Product in context: {product}")  # デバッグログ
 
+        # 商品が売り切れの場合はコメントフォームを表示しない
+        if product.status == "sold_out":
+            context['comments_disabled'] = True
+        else:
+            context['comments_disabled'] = False
+
         # 親コメントを取得
         comments = product.comments.filter(reply_to=None)
         print("Comments in context: ", comments)
@@ -260,6 +266,7 @@ class ProductDetailView(DetailView):
         context['comments'] = comments
         context['is_favorited'] = is_favorited 
         context['time_display'] = time_display
+        context['comments_disabled'] = context.get('comments_disabled', False)
 
         return context
 

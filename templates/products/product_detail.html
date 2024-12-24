@@ -15,6 +15,18 @@
         });
     });
 
+    document.addEventListener('DOMContentLoaded', function() {
+        // Djangoテンプレートで生成されたコメントの無効状態をJavaScriptに渡す
+        var commentsDisabled = "{{ comments_disabled|yesno:'true,false' }}"; // 'true' or 'false'として埋め込む
+
+        if (commentsDisabled === 'true') {
+            // コメント投稿用のplaceholderを変更
+            document.getElementById('comment-textarea').placeholder = "売り切れのため、投稿できません";
+            // 返信用のplaceholderを変更
+            document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
+        }
+    });
+
     // モーダルウィンドウを表示する関数
     function showAllComments() {
         const modal = new bootstrap.Modal(document.getElementById('commentModal'));
@@ -205,8 +217,8 @@
             <div class="modal-body">
                 <form method="POST">
                     {% csrf_token %}
-                    <textarea class="form-control" name="content" placeholder="コメントを投稿"></textarea>
-                    <button type="submit" class="btn btn-primary mt-3">投稿する</button>
+                    <textarea class="form-control" name="content" placeholder="コメントを投稿" id="comment-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
+                    <button type="submit" class="btn btn-primary mt-3" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
                 </form>
 
                 <div id="comments">
@@ -245,8 +257,8 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="reply_to" value="{{ comment.id }}">
                                     <div class="input-group">
-                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" style="height: 40px;"></textarea>
-                                        <button type="submit" class="btn btn-primary input-group-append">返信する</button>
+                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" id="reply-textarea" style="height: 40px;" {% if comments_disabled %}disabled{% endif %}></textarea>
+                                        <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
                                     </div>
                                 </form>
                             </div>
