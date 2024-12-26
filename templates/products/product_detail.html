@@ -7,23 +7,64 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ページが読み込まれた後にツールチップを初期化
-    document.addEventListener('DOMContentLoaded', function () {
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // ツールチップの初期化
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
             new bootstrap.Tooltip(tooltipTriggerEl);
         });
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Djangoテンプレートで生成されたコメントの無効状態をJavaScriptに渡す
-        var commentsDisabled = "{{ comments_disabled|yesno:'true,false' }}"; // 'true' or 'false'として埋め込む
+        // コメントフォームのsubmitイベント
+        var commentForm = document.getElementById('comment-form');
+        var commentTextarea = document.getElementById('comment-textarea');
+        
+        // 既にイベントリスナーが追加されている場合、削除してから追加
+        if (commentForm) {
+            commentForm.removeEventListener('submit', commentFormSubmitHandler);
+            commentForm.addEventListener('submit', commentFormSubmitHandler);
+        }
 
-        if (commentsDisabled === 'true') {
-            // コメント投稿用のplaceholderを変更
-            document.getElementById('comment-textarea').placeholder = "売り切れのため、投稿できません";
-            // 返信用のplaceholderを変更
-            document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
+        // 返信フォームのsubmitイベント
+        var replyForms = document.querySelectorAll('.reply-form-container form');
+        replyForms.forEach(function(replyForm) {
+            // 既にイベントリスナーが追加されている場合、削除してから追加
+            replyForm.removeEventListener('submit', replyFormSubmitHandler);
+            replyForm.addEventListener('submit', replyFormSubmitHandler);
+        });
+
+        // モーダルが表示された時にバリデーションを実行
+        var modal = document.getElementById('commentModal');
+        modal.addEventListener('shown.bs.modal', function () {
+            // コメントフォームのsubmitイベントが1回だけ登録されるようにする
+            if (commentForm) {
+                commentForm.removeEventListener('submit', commentFormSubmitHandler);
+                commentForm.addEventListener('submit', commentFormSubmitHandler);
+            }
+
+            // 返信フォームのsubmitイベントが1回だけ登録されるようにする
+            var replyForms = document.querySelectorAll('.reply-form-container form');
+            replyForms.forEach(function(replyForm) {
+                replyForm.removeEventListener('submit', replyFormSubmitHandler);
+                replyForm.addEventListener('submit', replyFormSubmitHandler);
+            });
+        });
+
+        // コメントフォームの送信前バリデーション
+        function commentFormSubmitHandler(event) {
+            if (!commentTextarea.value.trim()) {
+                event.preventDefault();
+                alert('コメントを入力してください！');
+            }
+        }
+
+        // 返信フォームの送信前バリデーション
+        function replyFormSubmitHandler(event) {
+            var replyTextarea = event.target.querySelector('textarea');
+            if (!replyTextarea.value.trim()) {
+                event.preventDefault();
+                alert('返信を入力してください！');
+            }
         }
     });
 
@@ -76,11 +117,11 @@
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-prev-icon"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-next-icon"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
@@ -206,6 +247,8 @@
     </div>
 </div>
 
+
+
 <!-- コメントモーダル -->
 <div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -215,10 +258,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="POST">
+                <!-- フォームにID 'comment-form'を追加 -->
+                <form id="comment-form" method="POST">
                     {% csrf_token %}
                     <textarea class="form-control" name="content" placeholder="コメントを投稿" id="comment-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
-                    <button type="submit" class="btn btn-primary mt-3" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
+                    <!-- 投稿ボタンにID 'submit-comment'を追加 -->
+                    <button type="submit" class="btn btn-primary mt-3" id="submit-comment" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
                 </form>
 
                 <div id="comments">
@@ -267,12 +312,11 @@
                         <p>コメントはまだありません。</p>
                     {% endfor %}
                 </div>
-                
-                
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
     .sold-out {
