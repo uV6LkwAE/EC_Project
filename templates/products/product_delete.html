@@ -4,11 +4,11 @@
 {% block content %}
   <div class="container mt-4">
     <h1>商品の削除</h1>
-    <p>本当に「{{ object.name }}」を削除してもよろしいですか？</p>
+    <p>本当に「{{ object.title }}」を削除してもよろしいですか？</p>
     <form method="post">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger">削除</button>
-      <a href="{% url 'products:product_list' %}" class="btn btn-secondary">キャンセル</a>
+      <a href="{% url 'products:product_detail' pk=product.pk %}" class="btn btn-secondary">キャンセル</a>
     </form>
   </div>
 {% endblock %}

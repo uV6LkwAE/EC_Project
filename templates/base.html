@@ -8,6 +8,7 @@
     <title>{% block title %}My Website{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
@@ -26,11 +27,18 @@
             position: fixed;
             z-index: 1050;
             left: 0;
-            top: 0;
+            top: -100%;  /* 初期位置を画面外に設定 */
             width: 100%;
             height: 100%;
             overflow: auto;
             background-color: rgba(0, 0, 0, 0.5);
+            transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out; /* スライドダウンとフェードイン */
+            opacity: 0;
+        }
+        .search-modal.show {
+            display: block;
+            top: 0; /* モーダル表示時に画面上部にスライドダウン */
+            opacity: 1;
         }
         .search-modal-content {
             background-color: #fff;
@@ -59,7 +67,7 @@
                 <button type="submit" class="btn btn-outline-secondary">
                     <i class="bi bi-search"></i>
                 </button>
-                <button type="button" id="toggle-advanced-search" class="btn btn-outline-secondary">
+                <button type="button" id="toggle-advanced-search" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#searchModal">
                     <i class="bi bi-filter"></i>
                 </button>
             </form>
@@ -88,7 +96,7 @@
                     <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-link text-decoration-none p-0">
-                            <i class="bi bi-box-arrow-in-right text-primary"></i>
+                            <i class="bi bi-box-arrow-in-right text-primary"></i> ログアウト
                         </button>
                     </form>
                 {% else %}
@@ -109,92 +117,84 @@
         <p class="mb-0">&copy; 2024 My Website</p>
     </footer>
 
-    <!-- Advanced Search Modal
-    <div id="searchModal" class="search-modal">
-        <div class="search-modal-content">
-            <span id="closeSearchModal" class="search-modal-close">&times;</span>
-            <h4>詳細検索</h4>
-            <form method="get" action="{% url 'products:product_list' %}">
-                <div class="mb-3">
-                    <label for="minPrice" class="form-label">最低価格:</label>
-                    <input type="number" name="min_price" id="minPrice" class="form-control" placeholder="例: 1000">
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">商品検索</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="mb-3">
-                    <label for="maxPrice" class="form-label">最高価格:</label>
-                    <input type="number" name="max_price" id="maxPrice" class="form-control" placeholder="例: 10000">
-                </div>
-                <div class="mb-3">
-                    <label for="condition" class="form-label">状態:</label>
-                    <select name="condition" id="condition" class="form-select">
-                        <option value="">選択してください</option>
-                        <option value="new">新品</option>
-                        <option value="used">中古</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">検索</button>
-            </form>
-        </div>
-    </div> -->
-
+                <div class="modal-body">
+                    <form method="get" action="{% url 'products:product_list' %}">
+                        <div class="mb-3">
+                            <label for="minPrice" class="form-label">最低価格:</label>
+                            <input type="number" id="minPrice" name="min_price" placeholder="1000" class="form-control">
+                        </div>
     
-
-
-    <!-- 詳細検索モーダル -->
-    <div id="searchModal" class="search-modal">
-        <div class="search-modal-content">
-            <span id="closeSearchModal" class="search-modal-close">&times;</span>
-            <h2>商品検索</h2>
-            <form method="get" action="{% url 'products:product_list' %}">
-                <label for="minPrice">最低価格:</label>
-                <input type="text" id="minPrice" name="min_price" placeholder="例: 1000" class="form-control">
-
-                <label for="maxPrice">最高価格:</label>
-                <input type="text" id="maxPrice" name="max_price" placeholder="例: 10000" class="form-control">
-
-                <label for="condition">状態:</label>
-                <select id="condition" name="condition" class="form-select">
-                    <option value="">選択してください</option>
-                    <option value="new">新品</option>
-                    <option value="used">中古</option>
-                </select>
-
-                <label for="status">ステータス:</label>
-                <select id="status" name="status" class="form-select">
-                    <option value="">選択してください</option>
-                    <option value="available">販売中</option>
-                    <option value="sold">売り切れ</option>
-                </select>
-
-                <label for="category">カテゴリー:</label>
-                <select id="category" name="category" class="form-select">
-                    <option value="">選択してください</option>
-                    <option value="electronics">電子機器</option>
-                    <option value="furniture">家具</option>
-                    <option value="clothing">衣料品</option>
-                </select>
-
-                <label for="title">タイトル:</label>
-                <input type="text" id="title" name="title" placeholder="商品タイトルを入力" class="form-control">
-
-                <label for="includeKeywords">キーワード（必ず含む）:</label>
-                <input type="text" id="includeKeywords" name="include_keywords" placeholder="例: 高級" class="form-control">
-
-                <label for="excludeKeywords">キーワード（含まない）:</label>
-                <input type="text" id="excludeKeywords" name="exclude_keywords" placeholder="例: 安価" class="form-control">
-
-                <label for="username">ユーザー名:</label>
-                <input type="text" id="username" name="user" placeholder="ユーザー名を入力" class="form-control">
-
-                <label for="excludeUser">特定のユーザーを非表示:</label>
-                <input type="text" id="excludeUser" name="exclude_user" placeholder="非表示にするユーザー名" class="form-control">
-
-                <button type="submit" class="btn btn-primary mt-3">検索</button>
-            </form>
+                        <div class="mb-3">
+                            <label for="maxPrice" class="form-label">最高価格:</label>
+                            <input type="number" id="maxPrice" name="max_price" placeholder="5000" class="form-control">
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="condition" class="form-label">状態:</label>
+                            <select id="condition" name="condition" class="form-select">
+                                <option value="">選択してください</option>
+                                <option value="new">新品</option>
+                                <option value="used">中古</option>
+                            </select>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="status" class="form-label">ステータス:</label>
+                            <select id="status" name="status" class="form-select">
+                                <option value="">選択してください</option>
+                                <option value="available">販売中</option>
+                                <option value="sold">売り切れ</option>
+                            </select>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="category" class="form-label">カテゴリー:</label>
+                            <select id="category" name="category" class="form-select">
+                                <option value="">選択してください</option>
+                                <option value="electronics">電子機器</option>
+                                <option value="furniture">家具</option>
+                                <option value="clothing">衣料品</option>
+                            </select>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="title" class="form-label">タイトル:</label>
+                            <input type="text" id="title" name="title" placeholder="パソコン" class="form-control">
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="includeKeywords" class="form-label">キーワード（必ず含む）:</label>
+                            <input type="text" id="includeKeywords" name="include_keywords" placeholder="例: パソコン" class="form-control">
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="excludeKeywords" class="form-label">キーワード（含まない）:</label>
+                            <input type="text" id="excludeKeywords" name="exclude_keywords" placeholder="例: パソコン" class="form-control">
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="username" class="form-label">ユーザー名:</label>
+                            <input type="text" id="username" name="user" placeholder="ユーザー名" class="form-control">
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="excludeUser" class="form-label">特定のユーザーを非表示:</label>
+                            <input type="text" id="excludeUser" name="exclude_user" placeholder="ユーザー名" class="form-control">
+                        </div>
+    
+                        <button type="submit" class="btn btn-primary mt-3">検索</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
-
-
-
 
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -204,17 +204,9 @@
         const toggleAdvancedSearch = document.getElementById('toggle-advanced-search');
         const closeSearchModal = document.getElementById('closeSearchModal');
 
-        toggleAdvancedSearch.addEventListener('click', () => {
-            searchModal.style.display = 'block';
-        });
-
-        closeSearchModal.addEventListener('click', () => {
-            searchModal.style.display = 'none';
-        });
-
         window.addEventListener('click', (event) => {
             if (event.target === searchModal) {
-                searchModal.style.display = 'none';
+                searchModal.classList.remove('show');  // モーダルの外をクリックで非表示
             }
         });
     </script>

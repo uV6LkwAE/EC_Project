@@ -8,6 +8,8 @@ from django.forms.utils import ErrorList
 from .models import Product, ProductImage, Favorite, Comment
 from .forms import ProductForm
 from django import forms
+from django.utils import timezone
+from datetime import timedelta
 import json
 from django.http import JsonResponse
 from django.http import HttpResponseForbidden
@@ -211,27 +213,69 @@ class ProductDetailView(DetailView):
     context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
-        # 親クラスのget_context_dataを呼び出し
         context = super().get_context_data(**kwargs)
-        product = self.object  # 現在表示されている商品を取得
+        product = self.get_object()  # 現在表示されている商品を取得
+        self.object = product
+        print(f"Product in context: {product}")  # デバッグログ
 
-        # 親コメントを取得（reply_to=Noneでフィルタリング）
-        # リプライを含まない、最初のコメント
+        # 商品が売り切れの場合はコメントフォームを表示しない
+        if product.status == "sold_out":
+            context['comments_disabled'] = True
+        else:
+            context['comments_disabled'] = False
+
+        # 親コメントを取得
         comments = product.comments.filter(reply_to=None)
+        print("Comments in context: ", comments)
 
-        # コメントフォームを取得（ユーザーが認証されている場合）
-        # ユーザーがログインしている場合、CommentFormを作成し、コンテキストに追加する
+        # コメントフォームを取得
         if self.request.user.is_authenticated:
             form = CommentForm()
             context['form'] = form
 
-        # コメントをコンテキストに追加
+        # お気に入り判定
+        if self.request.user.is_authenticated:
+            is_favorited = product.favorited_by.filter(user=self.request.user).exists()  # 修正: idではなくuserで検索
+        else:
+            is_favorited = False
+
+        # 出品日時の計算
+        created_at = product.created_at
+        now = timezone.now()
+        time_diff = now - created_at
+
+        # 1分未満の場合は「たった今出品されました」
+        if time_diff < timedelta(minutes=1):
+            time_display = "たった今出品されました"
+
+        # 1分以上60分未満の場合は「~分前に出品されました」
+        elif time_diff < timedelta(hours=1):
+            minutes_ago = int(time_diff.total_seconds() // 60)
+            time_display = f"{minutes_ago}分前に出品されました"
+
+        # 1時間以上24時間未満の場合は「~時間前に出品されました」
+        elif time_diff < timedelta(days=1):
+            hours_ago = int(time_diff.total_seconds() // 3600)
+            time_display = f"{hours_ago}時間前に出品されました"
+
+        # それ以上の場合は「~日前に出品されました」
+        else:
+            days_ago = time_diff.days
+            time_display = f"{days_ago}日前に出品されました"
+
         context['comments'] = comments
+        context['is_favorited'] = is_favorited 
+        context['time_display'] = time_display
+        context['comments_disabled'] = context.get('comments_disabled', False)
+
         return context
+
 
     def post(self, request, *args, **kwargs):
         # 商品詳細ページに対するPOSTリクエスト（コメント投稿）
         product = self.get_object()
+        self.object = product
+        print(f"Product object: {product}")  # デバッグログ
         form = CommentForm(request.POST)
 
         if form.is_valid():
@@ -268,6 +312,7 @@ class ProductDetailView(DetailView):
             return redirect('products:product_detail', pk=product.pk)
 
         # フォームが無効な場合、再度商品詳細ページを表示
+        print(f"Form errors: {form.errors}") 
         return self.render_to_response(self.get_context_data(form=form))
 
 

@@ -4,112 +4,110 @@
 {% block title %}{{ product.title }}{% endblock %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // ツールチップの初期化
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // コメントフォームのsubmitイベント
+        var commentForm = document.getElementById('comment-form');
+        var commentTextarea = document.getElementById('comment-textarea');
+        
+        // 既にイベントリスナーが追加されている場合、削除してから追加
+        if (commentForm) {
+            commentForm.removeEventListener('submit', commentFormSubmitHandler);
+            commentForm.addEventListener('submit', commentFormSubmitHandler);
+        }
+
+        // 返信フォームのsubmitイベント
+        var replyForms = document.querySelectorAll('.reply-form-container form');
+        replyForms.forEach(function(replyForm) {
+            // 既にイベントリスナーが追加されている場合、削除してから追加
+            replyForm.removeEventListener('submit', replyFormSubmitHandler);
+            replyForm.addEventListener('submit', replyFormSubmitHandler);
+        });
+
+        // モーダルが表示された時にバリデーションを実行
+        var modal = document.getElementById('commentModal');
+        modal.addEventListener('shown.bs.modal', function () {
+            // コメントフォームのsubmitイベントが1回だけ登録されるようにする
+            if (commentForm) {
+                commentForm.removeEventListener('submit', commentFormSubmitHandler);
+                commentForm.addEventListener('submit', commentFormSubmitHandler);
+            }
+
+            // 返信フォームのsubmitイベントが1回だけ登録されるようにする
+            var replyForms = document.querySelectorAll('.reply-form-container form');
+            replyForms.forEach(function(replyForm) {
+                replyForm.removeEventListener('submit', replyFormSubmitHandler);
+                replyForm.addEventListener('submit', replyFormSubmitHandler);
+            });
+        });
+
+        // コメントフォームの送信前バリデーション
+        function commentFormSubmitHandler(event) {
+            if (!commentTextarea.value.trim()) {
+                event.preventDefault();
+                alert('コメントを入力してください！');
+            }
+        }
+
+        // 返信フォームの送信前バリデーション
+        function replyFormSubmitHandler(event) {
+            var replyTextarea = event.target.querySelector('textarea');
+            if (!replyTextarea.value.trim()) {
+                event.preventDefault();
+                alert('返信を入力してください！');
+            }
+        }
+    });
+
     // モーダルウィンドウを表示する関数
     function showAllComments() {
         const modal = new bootstrap.Modal(document.getElementById('commentModal'));
         modal.show();
     }
 
-    // 「続きを表示」ボタンがクリックされたときにコメントを表示する
-    function showMoreComments() {
-        console.log("続きを表示ボタンがクリックされました");
-
-        // すべてのコメントを表示
-        const hiddenComments = document.querySelectorAll('.comment-hidden');
-        hiddenComments.forEach(comment => {
-            comment.classList.remove('d-none');  // コメントを表示
-            comment.classList.add('d-block');    // d-blockを適用
-            // アニメーションを使って表示
-            comment.style.maxHeight = comment.scrollHeight + "px";
-        });
-
-        // 「続きを表示」ボタンを非表示にする
-        document.getElementById('show-more-comments').style.display = 'none';
-        document.getElementById('show-less-comments').style.display = 'inline-block'; // 「閉じる」ボタンを表示
-    }
-
-    // コメントを閉じる関数
-    function showLessComments() {
-        const allComments = document.querySelectorAll('.comment');
-        allComments.forEach((comment, index) => {
-            if (index > 2) {  // 最初の3つを除く
-                comment.classList.add('d-none');  // コメントを非表示
-                comment.classList.remove('d-block'); // d-blockを削除
-                comment.style.maxHeight = "0"; // 最大高さを0に設定してアニメーション
-            }
-        });
-
-        // 「続きを読む」ボタンを再度表示
-        document.getElementById('show-more-comments').style.display = 'inline-block';
-        document.getElementById('show-less-comments').style.display = 'none'; // 閉じるボタンを非表示
-    }
-
-    // ページ読み込み時に3つ以上のコメントを非表示にする
-    window.onload = function() {
-        const allComments = document.querySelectorAll('.comment');
-        allComments.forEach((comment, index) => {
-            if (index > 2) {
-                comment.classList.add('comment-hidden');  // 3つ目以降を非表示に
-                comment.classList.remove('comment-visible'); // comment-visibleクラスを削除
-            }
-        });
-    }
-
-    // 「返信を表示」ボタンがクリックされたときにコメントを表示する
-    function toggleReplies(commentId) {
-        const repliesDiv = document.getElementById('replies-' + commentId);
-        const replyForm = document.getElementById('reply-form-' + commentId);
-
-        // スレッド（リプライ）の表示/非表示をトグル
-        if (repliesDiv.style.display === 'none' || repliesDiv.style.display === '') {
-            repliesDiv.style.display = 'block';
-            repliesDiv.style.height = repliesDiv.scrollHeight + 'px'; // スムーズに展開
-        } else {
-            repliesDiv.style.display = 'none';
-            repliesDiv.style.height = '0'; // 非表示にする
-        }
-
-        // 返信フォームの表示/非表示をトグル
-        if (replyForm.style.display === 'none' || replyForm.style.display === '') {
-            replyForm.style.display = 'block';
-        } else {
-            replyForm.style.display = 'none';
-        }
-    }
-
-    // モーダル内の「返信を表示」ボタンがクリックされたときにリプライを表示する
     function toggleRepliesInModal(commentId) {
-        const repliesDiv = document.getElementById('replies-modal-' + commentId);
-        const replyForm = document.getElementById('reply-form-modal-' + commentId);
+        const repliesDiv = document.getElementById('replies-' + commentId);  // リプライ部分
+        const replyForm = document.getElementById('reply-form-' + commentId);  // 返信フォーム
 
         // スレッド（リプライ）の表示/非表示をトグル
-        if (repliesDiv.style.display === 'none' || repliesDiv.style.display === '') {
-            repliesDiv.style.display = 'block';
-            repliesDiv.style.height = repliesDiv.scrollHeight + 'px'; // スムーズに展開
-        } else {
-            repliesDiv.style.display = 'none';
-            repliesDiv.style.height = '0'; // 非表示にする
+        console.log("Replies Div: ", repliesDiv);  // デバッグ用
+        if (repliesDiv && repliesDiv.style) {
+            if (repliesDiv.style.display === 'none' || repliesDiv.style.display === '') {
+                repliesDiv.style.display = 'block';
+                repliesDiv.style.height = repliesDiv.scrollHeight + 'px'; // スムーズに展開
+            } else {
+                repliesDiv.style.display = 'none';
+                repliesDiv.style.height = '0'; // 非表示にする
+            }
         }
 
         // 返信フォームの表示/非表示をトグル
-        if (replyForm.style.display === 'none' || replyForm.style.display === '') {
-            replyForm.style.display = 'block';
-        } else {
-            replyForm.style.display = 'none';
+        if (replyForm && replyForm.style) {
+            if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+                replyForm.style.display = 'block';
+            } else {
+                replyForm.style.display = 'none';
+            }
         }
     }
-
 </script>
 
-<!-- 商品詳細ページ -->
 <div class="container mt-5">
     <div class="row">
+        <!-- 商品スライダー部分（左側）-->
         <div class="col-md-7 position-relative">
-            <!-- 商品のスライダー -->
             <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
                 {% if product.status == "sold_out" %}
-                <div class="sold-out">SOLD OUT</div>
+                    <div class="sold-out">SOLD</div>
                 {% endif %}
                 <div class="carousel-inner">
                     {% for image in product.images.all %}
@@ -119,95 +117,139 @@
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-prev-icon"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-next-icon"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
-
-            <!-- サムネイル画像 -->
-            <div class="mt-3 d-flex justify-content-center">
+            <!-- サムネイル表示がおかしいのでコメントアウト -->
+            <!-- <div class="mt-3 d-flex justify-content-center" style="max-width: 80%; overflow-x: auto;">
                 {% for image in product.images.all %}
-                    <img src="{{ image.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="img-thumbnail mx-1" style="width: 80px; cursor: pointer;" data-bs-target="#productCarousel" data-bs-slide-to="{{ forloop.counter0 }}">
+                    <img src="{{ image.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="img-thumbnail mx-1" style="cursor: pointer;" data-bs-target="#productCarousel" data-bs-slide-to="{{ forloop.counter0 }}">
                 {% endfor %}
-            </div>
+            </div> -->
         </div>
 
+        <!-- 商品情報部分（右側）-->
         <div class="col-md-5">
             <h2>{{ product.title }}</h2>
             <p><strong>価格:</strong> ¥{{ product.price }}</p>
-            <p><strong>カテゴリー:</strong> {{ product.get_category_display }}</p>
-            <p><strong>状態:</strong> {{ product.get_condition_display }}</p>
-            <p><strong>出品者:</strong> {{ product.seller.username }}</p>
-            <p><strong>販売状況:</strong> {{ product.get_status_display }}</p>
-            <p><strong>商品説明:</strong></p>
-            <p>{{ product.description }}</p>
 
-            <h3>コメント</h3>
-
-            <!-- 親コメントリスト -->
-            <div id="comments">
-                {% for comment in comments %}
-                    <div class="comment mt-3 comment-hidden {% if forloop.counter <= 2 %}comment-visible{% else %}d-none{% endif %}" id="comment-{{ comment.id }}" style="background-color: #f1f1f1; padding: 10px; border-radius: 8px; max-height: none; overflow: visible; transition: max-height 0.5s ease-in-out;">
-                        <p><strong>{{ comment.user.username }}</strong>: {{ comment.content }}</p>
-                        <p><em>{{ comment.created_at }}</em></p>
-
-                        <!-- スレッド用展開ボタン -->
-                        <button class="btn btn-link" onclick="toggleReplies({{ comment.id }})">{{ comment.replies.count }}件の返信</button>
-
-                        <!-- リプライの表示 -->
-                        <div class="replies" id="replies-{{ comment.id }}" style="display:none; margin-top: 10px; height: 0; transition: height 0.5s ease-in-out;">
-                            {% for reply in comment.replies.all %}
-                                <div class="reply" style="background-color: white; padding: 10px; margin-top: 5px; border-left: 4px solid blue; border-bottom: 1px solid #ccc;">
-                                    <p><strong>{{ reply.user.username }}</strong>: {{ reply.content }}</p>
-                                    <p><em>{{ reply.created_at }}</em></p>
-                                </div>
-                            {% empty %}
-                                <p>このコメントにはリプライはありません。</p>
-                            {% endfor %}
-                        </div>
-
-                        <!-- 返信フォーム -->
-                        <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display:none; margin-top: 10px;">
-                            <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="reply_to" value="{{ comment.id }}">
-
-                                <div class="input-group">
-                                    <textarea class="form-control" name="content" placeholder="返信を入力してください" style="height: 40px;"></textarea>
-                                    <button type="submit" class="btn btn-primary input-group-append">返信する</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                {% empty %}
-                    <p>コメントはまだありません。</p>
-                {% endfor %}
+            <div class="d-flex flex-md-row gap-2 mb-3 align-items-center">
+                <!-- お気に入りボタン -->
+                {% if user.is_authenticated %}
+                    {% if product.seller == user %}
+                    <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" data-bs-title="自身の商品はお気に入りは追加できません">
+                        <button class="btn btn-primary btn-sm" disabled>
+                            <i class="bi bi-bookmarks"></i> お気に入り
+                        </button>
+                    </span>
+                    {% else %}
+                        <form method="post" action="{% url 'products:toggle_favorite' product.id %}">
+                            {% csrf_token %}
+                            {% if is_favorited %}
+                                <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" title="お気に入り解除">
+                                    <i class="bi bi-bookmarks-fill"></i> お気に入り解除
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" title="お気に入り追加">
+                                    <i class="bi bi-bookmarks"></i> お気に入り
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                {% endif %}
+            
+                <!-- コメントボタン -->
+                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="コメントを確認・投稿する">
+                    <button class="btn btn-secondary btn-sm d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#commentModal">
+                        <i class="bi bi-chat-right-text-fill me-2"></i> コメント
+                    </button>
+                </span>
+            
+                <!-- 編集ボタン -->
+                {% if user.is_authenticated and product.seller == user %}
+                    {% if product.status == "available" %}
+                        <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning btn-sm" data-bs-toggle="tooltip" title="商品を編集">
+                            <i class="bi bi-pencil-square"></i> 編集
+                        </a>
+                    {% else %}
+                        <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="売り切れ商品のため編集できません">
+                            <button class="btn btn-warning btn-sm" style="pointer-events: none;" disabled>
+                                <i class="bi bi-pencil-square"></i> 編集
+                            </button>
+                        </span>
+                    {% endif %}
+                {% endif %}
+            
+                <!-- 削除ボタン -->
+                {% if user.is_authenticated and product.seller == user %}
+                    {% if product.status == "available" %}
+                        <!-- 販売中の場合 -->
+                        <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" title="商品を削除">
+                            <i class="bi bi-trash3"></i> 削除
+                        </a>
+                    {% else %}
+                        <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="売り切れ商品のため削除できません">
+                            <button class="btn btn-danger btn-sm" style="pointer-events: none;" disabled>
+                                <i class="bi bi-trash3"></i> 削除
+                            </button>
+                        </span>
+                    {% endif %}
+                {% endif %}
             </div>
-
-            <!-- 「もっと見る」ボタン -->
-            {% if comments|length > 2 %}
-                <div id="show-more-comments" style="margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="showAllComments()">もっと見る</button>
-                </div>
+            
+            <!-- 出品日時の表示 -->
+            <p class="mt-3" style="opacity: 0.6; display: flex; align-items: center;">
+                <i class="bi bi-clock-fill" style="font-size: 1rem; margin-right: 5px;"></i>
+                {{ time_display }}
+            </p>
+            
+            <!-- 購入ボタン -->
+            {% if user.is_authenticated %}
+                {% if product.status == "available" %}
+                    {% if product.seller != user %}
+                        <a href="{% url 'transactions:initiate_transaction' product.id %}" class="btn btn-danger w-100 mt-3">購入する</a>
+                    {% else %}
+                        <span class="btn btn-danger w-100 mt-3" style="pointer-events: none; opacity: 1;">
+                            販売中
+                        </span>
+                    {% endif %}
+                {% else %}
+                    <span class="btn btn-danger w-100 mt-3" style="pointer-events: none; opacity: 1;">
+                        売り切れ
+                    </span>
+                {% endif %}
             {% endif %}
 
-            <!-- コメント追加フォーム -->
-            <h4>コメントを追加</h4>
-            <form method="POST">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <input type="hidden" id="id_reply_to" name="reply_to" value="">
-                <button type="submit" class="btn btn-primary">コメントを投稿</button>
-            </form>
+            <!-- 商品の説明 -->
+            <h4 class="mt-3" style="opacity: 0.6;">商品の説明</h4>
+            <p>{{ product.description }}</p>
+
+            <hr>
+
+            <!-- 商品の情報 -->
+            <h4 class="mt-3" style="opacity: 0.6;">商品の情報</h4>
+            <p><strong style="opacity: 0.6;">カテゴリー:</strong> {{ product.get_category_display }}</p>
+            <p><strong style="opacity: 0.6;">状態:</strong> {{ product.get_condition_display }}</p>
+
+            <hr>
+
+            <!-- 出品者の情報 -->
+            <h4 class="mt-3" style="opacity: 0.6;">出品者の情報</h4>
+            <p>{{ product.seller }}</p>
+        
         </div>
+
     </div>
 </div>
 
-<!-- モーダル -->
+
+
+<!-- コメントモーダル -->
 <div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -216,21 +258,34 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="all-comments">
+                <!-- フォームにID 'comment-form'を追加 -->
+                <form id="comment-form" method="POST">
+                    {% csrf_token %}
+                    <textarea class="form-control" name="content" placeholder="コメントを投稿" id="comment-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
+                    <!-- 投稿ボタンにID 'submit-comment'を追加 -->
+                    <button type="submit" class="btn btn-primary mt-3" id="submit-comment" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
+                </form>
+
+                <div id="comments">
                     {% for comment in comments %}
-                        <div class="comment mt-3 d-block" id="comment-{{ comment.id }}" style="background-color: #f1f1f1; padding: 10px; border-radius: 8px;">
+                        <div class="comment mt-3" 
+                             id="comment-{{ comment.id }}" 
+                             style="background-color: #f1f1f1; padding: 10px; border-radius: 8px; max-height: none; overflow: visible; transition: max-height 0.5s ease-in-out;">
                             <p><strong>{{ comment.user.username }}</strong>: {{ comment.content }}</p>
                             <p><em>{{ comment.created_at }}</em></p>
 
-
-
-                            <!-- モーダル内での「返信を表示」ボタンの変更 -->
-                            <button class="btn btn-link" onclick="toggleRepliesInModal({{ comment.id }})">
+                            <!-- スレッド用展開ボタン -->
+                            <button class="btn btn-link" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#replies-{{ comment.id }}" 
+                                    aria-expanded="false" 
+                                    aria-controls="replies-{{ comment.id }}" 
+                                    onclick="toggleRepliesInModal({{ comment.id }})">
                                 {{ comment.replies.count }}件の返信
                             </button>
 
                             <!-- リプライの表示 -->
-                            <div class="replies" id="replies-modal-{{ comment.id }}" style="display:none; margin-top: 10px;">
+                            <div class="replies" id="replies-{{ comment.id }}" style="display:none; margin-top: 10px; height: 0; transition: height 0.5s ease-in-out;">
                                 {% for reply in comment.replies.all %}
                                     <div class="reply" style="background-color: white; padding: 10px; margin-top: 5px; border-left: 4px solid blue; border-bottom: 1px solid #ccc;">
                                         <p><strong>{{ reply.user.username }}</strong>: {{ reply.content }}</p>
@@ -242,18 +297,19 @@
                             </div>
 
                             <!-- 返信フォーム -->
-                            <div class="reply-form-container" id="reply-form-modal-{{ comment.id }}" style="display:none; margin-top: 10px;">
+                            <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display:none; margin-top: 10px;">
                                 <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="reply_to" value="{{ comment.id }}">
-
                                     <div class="input-group">
-                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" style="height: 40px;"></textarea>
-                                        <button type="submit" class="btn btn-primary input-group-append">返信する</button>
+                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" id="reply-textarea" style="height: 40px;" {% if comments_disabled %}disabled{% endif %}></textarea>
+                                        <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
+                    {% empty %}
+                        <p>コメントはまだありません。</p>
                     {% endfor %}
                 </div>
             </div>
@@ -261,16 +317,19 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
-
-    .modal-content {
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);  /* 影を濃く設定 */
-    }
-
-    .carousel {
-        position: relative !important;
+    .sold-out {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: red;
+        color: white;
+        padding: 5px 20px;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+        border-radius: 5px;
     }
 
     .carousel-inner {
@@ -278,19 +337,13 @@
         z-index: 1 !important;
     }
 
-    .sold-out {
-        position: absolute !important;
-        top: 10px !important;
-        left: 10px !important;
-        background: rgba(255, 0, 0, 0.8) !important;
-        color: white !important;
-        font-weight: bold !important;
-        font-size: 14px !important;
-        text-transform: uppercase !important;
-        padding: 5px 20px !important;
-        z-index: 1000 !important;
-        pointer-events: none !important;
-        border-radius: 5px !important;
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
     .comment {
@@ -299,34 +352,56 @@
         padding: 10px;
         margin-bottom: 10px;
         border-radius: 5px;
-        max-height: none;
-        overflow: hidden;
-        transition: all 0.5s ease;
     }
 
-    .comment-hidden {
-        display: none;
-    }
-
-    .comment-visible {
-        display: block;
-    }
-
-    .replies {
-        margin-left: 20px;
+    .reply {
         background-color: #f1f1f1;
         padding: 10px;
-        border-radius: 5px;
         margin-top: 5px;
+        border-left: 4px solid blue;
+        border-bottom: 1px solid #ccc;
     }
 
-    .reply-form-container {
-        margin-top: 10px;
+    /* スマートフォン版のボタンレイアウト */
+    @media (max-width: 768px) {
+        .d-flex {
+            display: flex;
+            flex-wrap: nowrap;  /* ボタンを横並びにする */
+            justify-content: center; /* ボタンを中央に配置 */
+            gap: 0.5rem;  /* ボタン間の隙間を調整 */
+        }
+
+
+        .d-inline-block {
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            font-size: 0.6rem;  /* ボタンの文字をさらに小さく */
+            padding: 4px 8px;  /* ボタンのパディングをさらに小さく */
+            min-width: 70px;  /* ボタンの最小幅をさらに小さく */
+        }
+
+        .container {
+            max-width: 100%;
+        }
     }
 
-    #show-more-comments, #show-less-comments {
-        margin-top: 20px;
+
+    /* デスクトップ版でボタンを左寄せ */
+    @media (min-width: 768px) {
+        .d-flex.justify-content-md-start {
+            justify-content: flex-start;
+        }
+
+        /* デスクトップ版ボタンを横並びにする */
+        .d-flex.flex-row {
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+        }
     }
+
 </style>
 
 {% endblock %}
