@@ -66,6 +66,17 @@
                 alert('返信を入力してください！');
             }
         }
+
+        var commentsDisabled = "{{ comments_disabled|yesno:'true,false' }}"; // 'true' or 'false'として埋め込む
+
+        if (commentsDisabled === 'true') {
+            // コメント投稿用のplaceholderを変更
+            document.getElementById('comment-textarea').placeholder = "売り切れのため、コメントできません";
+            // 返信用のplaceholderを変更
+            document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
+        }
+
+
     });
 
     // モーダルウィンドウを表示する関数
@@ -298,13 +309,42 @@
 
                             <!-- 返信フォーム -->
                             <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display:none; margin-top: 10px;">
-                                <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
+
+                                <!-- <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="reply_to" value="{{ comment.id }}">
                                     <div class="input-group">
-                                        <textarea class="form-control" name="content" placeholder="返信を入力してください" id="reply-textarea" style="height: 40px;" {% if comments_disabled %}disabled{% endif %}></textarea>
+                                        <textarea class="form-control" name="content" placeholder="
+                                            {% if product.status == 'sold_out' and comment.replies.all.count == 0 %}
+                                                売り切れのため、返信できません
+                                            {% elif product.status == 'available' and comment.replies.all.count == 0 %}
+                                                返信を入力してください
+                                            {% endif %}" id="reply-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
                                         <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
                                     </div>
+                                </form> -->
+
+                                <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="reply_to" value="{{ comment.id }}">
+                                    <!-- 改行が含まれるため、スクロールしないと表示されなくなる -->
+                                     <!-- 1行で条件分岐をかくように -->
+                                    <!-- <div class="input-group">
+                                        <textarea class="form-control" name="content" placeholder="
+                                            {% if product.status == 'sold_out' and comment.replies.all.count == 0 %}
+                                                売り切れのため、返信できません
+                                            {% elif product.status == 'available' and comment.replies.all.count == 0 %}
+                                                返信を入力してください
+                                            {% else %}
+                                                返信できます
+                                            {% endif %}" id="reply-textarea" {% if comments_disabled %}disabled{% endif %} ></textarea>
+                                        <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
+                                    </div> -->
+                                    <div class="input-group">
+                                        <textarea class="form-control" name="content" placeholder="{% if product.status == 'sold_out' and comment.replies.all.count == 0 %}売り切れのため、返信できません{% elif product.status == 'available' and comment.replies.all.count == 0 %}返信を入力してください{% else %}返信できます{% endif %}" id="reply-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
+                                        <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
+                                    </div>
+                                    
                                 </form>
                             </div>
                         </div>
