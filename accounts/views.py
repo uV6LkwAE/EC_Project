@@ -1,6 +1,6 @@
 
 from django.urls import reverse_lazy
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import CreateView, TemplateView, UpdateView, DeleteView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin  # ユーザーがログインしているか判定
@@ -50,8 +50,8 @@ class CustomLogoutView(LoginRequiredMixin, LogoutView):
 
 
 # プロフィールビュー
-class ProfileView(LoginRequiredMixin, TemplateView):
-    template_name = 'accounts/profile.html'
+class MypageView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/my_page.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -60,16 +60,39 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         return context
 
 # プロフィール編集ビュー
-class ProfileEditView(LoginRequiredMixin, UpdateView):
+class MypageEditView(LoginRequiredMixin, UpdateView):
     model = CustomUser
     form_class = ProfileEditForm
-    template_name = 'accounts/profile_edit.html'
+    template_name = 'accounts/my_profile_edit.html'
     success_url = reverse_lazy('accounts:profile')
 
     def get_object(self, queryset=None):
         # 現在のログイン中のユーザーを返す
         return self.request.user
 
+# 他のユーザーのプロフィールビュー
+class ProfileView(TemplateView):
+    template_name = 'accounts/user_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # ユーザー情報を取得
+        user_id = kwargs.get('user_id')
+        user = get_object_or_404(CustomUser, pk=user_id)
+        context['user'] = user
+        
+        # 出品中の商品をフィルタリング
+        products = Product.objects.filter(seller=user)
+        
+        # 検索クエリが存在する場合
+        search_query = self.request.GET.get('q', '')
+        if search_query:
+            products = products.filter(title__icontains=search_query)  # 商品タイトルに検索ワードが含まれている商品を取得
+
+        context['products'] = products
+        
+        return context
 
 # アカウント削除ビュー
 class AccountDeleteView(LoginRequiredMixin, DeleteView):

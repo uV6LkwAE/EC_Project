@@ -1,12 +1,46 @@
 
 {% extends "base.html" %}
 
-{% block title %}商品一覧{% endblock %}
+{% block title %}
+    {{ user.username }} の出品した商品
+{% endblock %}
 
 {% block content %}
+<!-- container mt-5の影響で検索フォームが中央に配置できない -->
 <div class="container mt-5">
-    <!-- 商品一覧 -->
-    <h2>商品一覧</h2>
+    <!-- ユーザー情報カード -->
+    <div class="text-center p-4 bg-light rounded shadow-sm">
+        <!-- アイコン -->
+        <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン" class="img-fluid rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+        
+        <!-- ユーザー名 -->
+        <h2 class="mt-3">{{ user.username }}</h2>
+
+        <!-- 星評価 -->
+        <div class="d-flex justify-content-center align-items-center mt-3">
+            <div>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star text-secondary"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出品商品検索フォーム -->
+    <div class="search-bar mt-4 d-flex justify-content-center">
+        <form method="get" action="{% url 'accounts:user_profile' user_id=user.id %}" class="input-group col-12 col-md-6 col-lg-4">
+            <input type="text" name="q" class="form-control" placeholder="この出品者の商品から探す" value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+    
+
+    <!-- 出品商品リスト -->
+    <h3 class="mt-5">出品中の商品</h3>
     <div class="row">
         {% for product in products %}
             <div class="col-md-4 mb-4">
@@ -54,46 +88,7 @@
     </div>
 </div>
 
-<!-- CSS -->
 <style>
-    .search-box {
-        font-size: 1.2rem;
-        padding: 0.8rem;
-    }
-
-    .search-modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .search-modal-content {
-        background-color: white;
-        margin: 10% auto;
-        padding: 20px;
-        border-radius: 8px;
-        width: 50%;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        position: relative;
-        animation: fadeIn 0.3s;
-    }
-
-    .search-modal-close {
-        color: black;
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        font-size: 24px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
     /* カードにホバー効果を追加 */
     .card.hover-effect {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -104,36 +99,5 @@
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
 </style>
-
-<!-- JavaScript -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const searchModal = document.getElementById('searchModal');
-    const toggleAdvancedSearch = document.getElementById('toggle-advanced-search');
-    const closeSearchModal = document.getElementById('closeSearchModal');
-
-    toggleAdvancedSearch.addEventListener('click', () => {
-        searchModal.style.display = 'block';
-    });
-
-    closeSearchModal.addEventListener('click', () => {
-        searchModal.style.display = 'none';
-    });
-
-    window.addEventListener('click', (event) => {
-        if (event.target === searchModal) {
-            searchModal.style.display = 'none';
-        }
-    });
-});
-</script>
 {% endblock %}

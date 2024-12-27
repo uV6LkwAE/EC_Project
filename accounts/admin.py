@@ -9,8 +9,8 @@ CustomUser = get_user_model()
 class CustomUserAdmin(UserAdmin):
     # ユーザー編集画面で表示するフィールドを設定
     fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('nickname', 'age', 'address', 'icon')}),
+        (None, {'fields': ('age', 'address', 'icon')}),
     )
 
     # ユーザーリスト画面で表示するフィールドを設定
-    list_display = ('username', 'email', 'nickname', 'age', 'icon')
+    list_display = ('username', 'email', 'age', 'icon')

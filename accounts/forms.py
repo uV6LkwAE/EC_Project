@@ -5,14 +5,13 @@ from .models import CustomUser
 
 # サインアップフォーム
 class SignupForm(UserCreationForm):
-    nickname = forms.CharField(max_length=150, required=True, help_text='必須です。ニックネームを入力してください。')
     age = forms.IntegerField(required=False, help_text='任意です。年齢を入力してください。')
     address = forms.CharField(max_length=255, required=False, help_text='任意です。住所を入力してください。')
     icon = forms.ImageField(required=False, help_text='任意です。アイコン画像をアップロードしてください。')
 
     class Meta:
         model = CustomUser  # CustomUserモデルを使用
-        fields = ('username', 'nickname', 'email', 'password1', 'password2', 'age', 'address', 'icon')
+        fields = ('username', 'email', 'password1', 'password2', 'age', 'address', 'icon')
 
     # formの段階でオブジェクトが保存される前に3MB以下の制約をバリデーションに追加
     def clean_icon(self):
@@ -25,7 +24,6 @@ class SignupForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
-        user.nickname = self.cleaned_data['nickname']
         user.age = self.cleaned_data['age']
         user.address = self.cleaned_data['address']
         user.icon = self.cleaned_data.get('icon')

@@ -9,7 +9,7 @@
         <div class="row">
             {% for product in products %}
                 <div class="col-md-4 mb-4">
-                    <div class="card">
+                    <div class="card hover-effect"> <!-- hover-effect クラスを追加 -->
                         <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ product.title }}</h5>
@@ -26,4 +26,18 @@
         <p>お気に入りの商品はありません。</p>
     {% endif %}
 </div>
+
+<!-- CSS -->
+<style>
+    /* カードにホバー効果を追加 */
+    .card.hover-effect {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card.hover-effect:hover {
+        transform: scale(1.05); /* カードが少し広がる（1.05倍） */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
+    }
+</style>
+
 {% endblock %}
