@@ -1,0 +1,103 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+    {{ user.username }} の出品した商品
+{% endblock %}
+
+{% block content %}
+<!-- container mt-5の影響で検索フォームが中央に配置できない -->
+<div class="container mt-5">
+    <!-- ユーザー情報カード -->
+    <div class="text-center p-4 bg-light rounded shadow-sm">
+        <!-- アイコン -->
+        <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン" class="img-fluid rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+        
+        <!-- ユーザー名 -->
+        <h2 class="mt-3">{{ user.username }}</h2>
+
+        <!-- 星評価 -->
+        <div class="d-flex justify-content-center align-items-center mt-3">
+            <div>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star text-secondary"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出品商品検索フォーム -->
+    <div class="search-bar mt-4 d-flex justify-content-center">
+        <form method="get" action="{% url 'accounts:user_profile' user_id=user.id %}" class="input-group col-12 col-md-6 col-lg-4">
+            <input type="text" name="q" class="form-control" placeholder="この出品者の商品から探す" value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+    
+
+    <!-- 出品商品リスト -->
+    <h3 class="mt-5">出品中の商品</h3>
+    <div class="row">
+        {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card hover-effect">
+                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.title }}</h5>
+                        <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                        <p class="card-text"><strong>価格:</strong> ¥{{ product.price }}</p>
+                        <p class="card-text"><strong>状態:</strong> {{ product.get_condition_display }}</p>
+                        <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary">詳細を見る</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ページネーション -->
+    <div class="pagination">
+        {% if is_paginated %}
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a href="?page=1" class="page-link">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">前へ</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.next_page_number }}" class="page-link">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* カードにホバー効果を追加 */
+    .card.hover-effect {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card.hover-effect:hover {
+        transform: scale(1.05); /* カードが少し広がる（1.05倍） */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
+    }
+
+</style>
+{% endblock %}
