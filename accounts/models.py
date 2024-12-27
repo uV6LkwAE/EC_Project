@@ -10,7 +10,7 @@ class CustomUser(AbstractUser):
     icon = models.ImageField(upload_to='user_icons/', blank=True, null=True, help_text='任意です。アイコン画像をアップロードしてください。')
 
     # CreateSuperUserする際に必要なフィールドを指定
-    REQUIRED_FIELDS = ['email', 'age']
+    REQUIRED_FIELDS = []
 
     # ImageFieldに対してファイルサイズの制約を追加
     # 30MB以下のファイルサイズでiconが保存されることを確認
