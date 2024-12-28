@@ -152,12 +152,19 @@
             <div class="d-flex flex-md-row gap-2 mb-3 align-items-center">
                 <!-- お気に入りボタン -->
                 {% if user.is_authenticated %}
-                    {% if product.seller == user %}
+                {% if product.seller == user %}
                     <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" data-bs-title="自身の商品はお気に入りは追加できません">
                         <button class="btn btn-primary btn-sm" disabled>
                             <i class="bi bi-bookmarks"></i> お気に入り
                         </button>
                     </span>
+                {% else %}
+                    {% if product.status != "available" %}
+                        <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" data-bs-title="売り切れ商品のためお気に入りに追加できません">
+                            <button class="btn btn-secondary btn-sm" disabled>
+                                <i class="bi bi-bookmarks"></i> お気に入り
+                            </button>
+                        </span>
                     {% else %}
                         <form method="post" action="{% url 'products:toggle_favorite' product.id %}">
                             {% csrf_token %}
@@ -173,6 +180,8 @@
                         </form>
                     {% endif %}
                 {% endif %}
+                {% endif %}
+
             
                 <!-- コメントボタン -->
                 <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="コメントを確認・投稿する">
