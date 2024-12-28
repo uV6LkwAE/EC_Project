@@ -2,14 +2,13 @@
 {% extends "base.html" %}
 {% load add_class_accounts from accounts_add_class %}
 
-
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <h2 class="text-center mb-4">Sign Up</h2>
-        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light">
+        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light shadow-lg">
             {% csrf_token %}
             {{ form.non_field_errors }}
 
