@@ -74,6 +74,9 @@ class ProductListSearchView(ListView):
                 'status': form.cleaned_data.get('status') or None,
                 'category': form.cleaned_data.get('category') or None,
             }
+
+            print("Applied filters:", filters)
+
             for field, value in filters.items():
                 if value:
                     queryset = queryset.filter(**{field: value})
@@ -89,6 +92,7 @@ class ProductListSearchView(ListView):
             if form.cleaned_data.get('exclude_user'):
                 queryset = queryset.exclude(seller__username__icontains=form.cleaned_data['exclude_user'])
 
+        print("Final queryset:", queryset)
         return queryset
 
     def get_context_data(self, **kwargs):
