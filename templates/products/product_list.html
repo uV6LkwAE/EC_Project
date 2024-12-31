@@ -4,25 +4,42 @@
 {% block title %}商品一覧{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <!-- 商品一覧 -->
-    <h2>商品一覧</h2>
-    <div class="row">
-        {% for product in products %}
-            <div class="col-md-4 mb-4">
-                <div class="card hover-effect">
-                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ product.title }}</h5>
-                        <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                        <p class="card-text"><strong>価格:</strong> ¥{{ product.price }}</p>
-                        <p class="card-text"><strong>状態:</strong> {{ product.get_condition_display }}</p>
-                        <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary">詳細を見る</a>
-                    </div>
-                </div>
+
+
+    <div class="container mt-5">
+        <!-- 商品一覧 -->
+        <h2>商品一覧</h2>
+    
+        <!-- 検索結果がない場合の表示 -->
+        {% if products.count == 0 %}
+            <div class="d-flex justify-content-center align-items-center flex-column">
+                <!-- アイコン部分 -->
+                <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                <!-- メッセージ部分 -->
+                <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">検索結果はありません</p>
+                <!-- ボタンで再検索を促す -->
+                <a href="{% url 'products:product_list' %}" class="btn btn-secondary mt-3">検索結果をリセット</a>
             </div>
-        {% endfor %}
-    </div>
+        {% else %}
+            <!-- 検索結果がある場合の表示 -->
+            <div class="row">
+                {% for product in products %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card hover-effect">
+                            <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.title }}</h5>
+                                <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                                <p class="card-text"><strong>価格:</strong> ¥{{ product.price }}</p>
+                                <p class="card-text"><strong>状態:</strong> {{ product.get_condition_display }}</p>
+                                <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    
 
     <!-- デバッグ用にクエリパラメータを表示 -->
     <!-- <p>Request GET内容: {{ request.GET }}</p> -->
@@ -119,7 +136,6 @@
 
      -->
 
-</div>
 
 <!-- CSS -->
 <style>
