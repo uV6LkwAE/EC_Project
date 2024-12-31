@@ -24,16 +24,28 @@
         {% endfor %}
     </div>
 
+    <!-- デバッグ用にクエリパラメータを表示 -->
+    <!-- <p>Request GET内容: {{ request.GET }}</p> -->
+
+    <!-- デバッグ: リクエストパラメータの表示 -->
+    <!-- <div>
+        <h4>Request GET parameters (Raw):</h4>
+        <ul>
+            {% for key, value in request.GET.items %}
+                <li><strong>{{ key }}</strong>: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div> -->
+
+
     <!-- ページネーション -->
     <div class="pagination">
         {% if is_paginated %}
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
+                    <!-- "次へ"==>>"最初"のボタンを押したときの遷移でパラメーターが重複してしまうが、正常にページネーションが表示される &page=2&page=1 -->
                     <li class="page-item">
-                        <a href="?page=1" class="page-link">最初</a>
-                    </li>
-                    <li class="page-item">
-                        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">前へ</a>
+                        <a href="?{{ encoded_query_params }}&page=1" class="page-link">最初</a>
                     </li>
                 {% endif %}
 
@@ -41,21 +53,89 @@
                     <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
                 </li>
 
-                {% if page_obj.has_next %}
+                {% if page_obj.has_next and page_obj.next_page_number != page_obj.number %}
+
+                    <!-- 直接追加 -->
                     <li class="page-item">
-                        <a href="?page={{ page_obj.next_page_number }}" class="page-link">次へ</a>
+                        <a href="?{{ encoded_query_params }}&page={{ page_obj.next_page_number }}" class="page-link">次へ</a>
                     </li>
+                    
                     <li class="page-item">
-                        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">最後</a>
+                        <a href="?{{ encoded_query_params }}&page={{ page_obj.paginator.num_pages }}" class="page-link">最後</a>
                     </li>
                 {% endif %}
             </ul>
         {% endif %}
     </div>
+
+    <!-- 手動でリンクを追加 -->
+    <!-- <a href="http://127.0.0.1:8000/products/?%20min_price=&%20max_price=&%20condition=&%20status=sold_out&%20category=&%20title=&%20include_keywords=&%20exclude_keywords=&%20user=&%20exclude_user=&%20page=2">次へ（%20）</a>
+    <a href="http://127.0.0.1:8000/products/? min_price=& max_price=& condition=& status=sold_out& category=& title=& include_keywords=& exclude_keywords=& user=& exclude_user=& page=2">次へ（空白）</a> -->
+
+
+    <!-- ページネーションリンクのデバッグ -->
+    <!-- <div>
+        <h4>Generated Pagination URLs:</h4>
+        <ul>
+            {% for key, value in request.GET.items %}
+                {% if key != 'page' and value %}
+                    <li><strong>{{ key }}:</strong> {{ value|urlencode }}</li>
+                {% endif %}
+            {% endfor %}
+            <li><strong>Page 1 URL:</strong> ?{% for key, value in request.GET.items %}
+                                        {% if key != 'page' %}
+                                            {{ key }}={{ value|urlencode }}&{% endif %}
+                                    {% endfor %}page=1</li>
+            <li><strong>Page 2 URL:</strong> ?{% for key, value in request.GET.items %}
+                                        {% if key != 'page' %}
+                                            {{ key }}={{ value|urlencode }}&{% endif %}
+                                    {% endfor %}page=2</li>
+        </ul>
+    </div> -->
+
+    <!-- ページネーションデバッグ用 -->
+
+    <!-- <p>Request GET contents: {{ request.GET }}</p>
+
+    <div class="a">
+        <p>クリーン済み {{ query_params }}</p>
+    </div>
+
+    <div class="b">
+        <p>空白削除済み: {{ encoded_query_params }}</p>
+    </div>
+
+    <div class="c">
+        <p>encoded_query_params: {{ encoded_query_params }}</p>
+    </div>
+
+
+    <hr>
+    <p>Cleaned query params: {{ query_params }}</p>
+
+    <p>Encoded query params: {{ encoded_query_params }}</p>
+
+    <p>{% if 'page' in query_params %} Page found {% else %} No page parameter {% endif %}</p>
+
+     -->
+
 </div>
 
 <!-- CSS -->
 <style>
+
+    .a {
+        color: red;
+    }
+
+    .b {
+        color: blue;
+    }
+
+    .c {
+        color: green;
+    }
+
     .search-box {
         font-size: 1.2rem;
         padding: 0.8rem;
