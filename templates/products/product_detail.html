@@ -118,7 +118,10 @@
         <div class="col-md-7 position-relative">
             <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
                 {% if product.status == "sold_out" %}
-                    <div class="sold-out">SOLD</div>
+                    <!-- SOLDレイヤー（SVGを直接埋め込み） -->
+                    <div class="sold-overlay">
+                        <object type="image/svg+xml" data="../../static/images/sold_layer.svg" class="sold-image"></object>
+                    </div>
                 {% endif %}
                 <div class="carousel-inner">
                     {% for image in product.images.all %}
@@ -411,6 +414,27 @@
         border-left: 4px solid blue;
         border-bottom: 1px solid #ccc;
     }
+
+    .card-img-top {
+        position: relative;
+        width: 100%; /* 必要に応じて調整 */
+        height: 100%; /* 必要に応じて調整 */
+        overflow: hidden;
+    }
+
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; /* 親要素にぴったり合わせる */
+    }
+
+    .sold-image {
+        width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
+        height: 100%; /* 同じく高さも合わせる */
+    }
+
 
     /* スマートフォン版のボタンレイアウト */
     @media (max-width: 768px) {
