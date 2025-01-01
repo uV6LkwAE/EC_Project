@@ -24,9 +24,19 @@
             <!-- 検索結果がある場合の表示 -->
             <div class="row">
                 {% for product in products %}
-                    <div class="col-md-4 mb-4">
+                    <div class="col-md-4 mb-4 position-relative">
                         <div class="card hover-effect">
-                            <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                            <div class="card-img-top position-relative">
+                                <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+            
+                                {% if product.status == "sold_out" %}
+                                    <!-- SOLDレイヤー（SVGを直接埋め込み） -->
+                                    <div class="sold-overlay">
+                                        <object type="image/svg+xml" data="../../static/images/sold_layer.svg" class="sold-image"></object>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
                             <div class="card-body">
                                 <h5 class="card-title">{{ product.title }}</h5>
                                 <p class="card-text">{{ product.description|truncatewords:20 }}</p>
@@ -38,6 +48,7 @@
                     </div>
                 {% endfor %}
             </div>
+                        
         {% endif %}
     
 
@@ -208,6 +219,41 @@
             opacity: 1;
         }
     }
+
+    /* .card-img-top {
+        position: relative;
+    }
+
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; 
+        height: 30%; 
+    } */
+
+    .card-img-top {
+        position: relative;
+        width: 100%; /* 必要に応じて調整 */
+        height: 100%; /* 必要に応じて調整 */
+        overflow: hidden;
+    }
+
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; /* 親要素にぴったり合わせる */
+    }
+
+    .sold-image {
+        width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
+        height: 100%; /* 同じく高さも合わせる */
+    }
+
+
 </style>
 
 <!-- JavaScript -->
