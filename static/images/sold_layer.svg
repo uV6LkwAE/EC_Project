@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <g id="グループ_67" data-name="グループ 67" transform="translate(-273.578 -107)">
+    <g id="パス_20" data-name="パス 20" transform="translate(330.419 107) rotate(90)" fill="red">
+      <path d="M 58.79290008544922 56.3408203125 L 0.5 56.3408203125 L 0.5 -1.952081561088562 L 58.79290008544922 56.3408203125 Z" stroke="none"/>
+      <path d="M 1 -0.7449607849121094 L 1 55.8408203125 L 57.58578109741211 55.8408203125 L 1 -0.7449607849121094 M 0 -3.159183502197266 L 60 56.8408203125 L 0 56.8408203125 L 0 -3.159183502197266 Z" stroke="none" fill="red"/>
+    </g>
+    <text id="SOLD" transform="translate(284.373 138.698) rotate(-45)" fill="#fff" font-size="12" font-family="SegoeUI, Segoe UI"><tspan x="0" y="0">SOLD</tspan></text>
+  </g>
+</svg>
