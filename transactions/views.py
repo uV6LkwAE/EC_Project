@@ -8,6 +8,21 @@ from products.models import Product
 def initiate_transaction(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
+    # すでに取引が行われている場合
+    if Transaction.objects.filter(product=product, status='order_confirmed').exists():
+        # 商品詳細ページへのリダイレクトをJavaScriptで行う
+        if request.method == "POST":
+            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
+        else:
+            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
+
+    # 商品が売り切れの場合も同様に
+    if product.status == 'sold_out':
+        if request.method == "POST":
+            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
+        else:
+            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
+
     if request.method == "POST":
         shipping_address = request.POST.get('shipping_address')
 
