@@ -63,7 +63,12 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
                     `;
                 });
             } else {
-                contentDiv.innerHTML += '<p>購入した商品はありません。</p>';
+                contentDiv.innerHTML += `
+                    <div class="d-flex justify-content-center align-items-center flex-column">
+                        <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                        <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">購入した商品はありません</p>
+                    </div>
+                `;
             }
         });
 });
@@ -90,7 +95,12 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
                     `;
                 });
             } else {
-                contentDiv.innerHTML += '<p>出品した商品はありません。</p>';
+                contentDiv.innerHTML += `
+                    <div class="d-flex justify-content-center align-items-center flex-column">
+                        <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                        <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">出品した商品はありません</p>
+                    </div>
+                `;
             }
         });
 });
@@ -117,7 +127,12 @@ document.getElementById('trading-items-btn').addEventListener('click', function(
                     `;
                 });
             } else {
-                contentDiv.innerHTML += '<p>取引中の商品はありません。</p>';
+                contentDiv.innerHTML += `
+                    <div class="d-flex justify-content-center align-items-center flex-column">
+                        <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                        <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">取引中の商品はありません</p>
+                    </div>
+                `;
             }
         });
 });
