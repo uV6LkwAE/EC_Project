@@ -262,9 +262,26 @@
             <hr>
 
             <!-- 出品者の情報 -->
-            <h4 class="mt-3" style="opacity: 0.6;">出品者の情報</h4>
-            <p><a href="{% url 'accounts:user_profile' user_id=product.seller.id %}">{{ product.seller.username }}</a></p>
+            <h4 class="mt-3" style="opacity: 0.6; margin-bottom: 1rem;">出品者の情報</h4>
+            <div class="d-flex align-items-center">
+                <!-- 出品者アイコン -->
+                <div class="me-3" style="margin-right: 1rem;">
+                    {% if product.seller.icon %}
+                        <img src="{{ product.seller.icon.url }}" alt="{{ product.seller.username }}のアイコン" class="img-fluid rounded-circle" style="width: 4.5vw; height: 4.5vw; object-fit: cover; border-radius: 50%;" />
+                    {% else %}
+                        <i class="bi bi-person-circle" style="width: 4.5vw; height: 4.5vw; object-fit: cover; border-radius: 50%; font-size: 4.5vw; color: #6c757d;"></i>
+                    {% endif %}
+                </div>
 
+                <!-- 出品者の名前（リンク付き） -->
+                <div style="margin-left: 0.5rem;">
+                    <p class="m-0">
+                        <a href="{% url 'accounts:user_profile' user_id=product.seller.id %}" class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">
+                            <strong>{{ product.seller.username }}</strong>
+                        </a>
+                    </p>
+                </div>
+            </div>
         
         </div>
 
