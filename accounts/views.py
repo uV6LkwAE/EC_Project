@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from transactions.models import Transaction
 from products.models import Product
+from django.db.models import Q
 
 
 # サインアップビュー
@@ -104,26 +105,49 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
         # 現在のログイン中のユーザーを返す
         return self.request.user
 
+# 取引中の商品
+# ・ログイン中のユーザーであり、ステータスが('received', '受け取り完了')以外の場合
+# ・取引の新しい順で並び替え
+
+# 購入した商品
+# ・ログイン中のユーザーであり、ステータスが('received', '受け取り完了')である
+# ・取引の新しい順で並び替え
+
+# 出品した商品
+# ・ログイン中のユーザーが出品した商品である
+# ・・取引の新しい順で並び替え
+
+
 # 購入した商品ビュー
-# 'received', '受け取り完了'した商品
 @login_required
 def purchased_items(request):
-    status_filter = request.GET.get('status')  # クエリパラメータで状態を取得
-    transactions = Transaction.objects.filter(buyer=request.user).select_related('product')
-    
+    # クエリパラメータで状態を取得
+    status_filter = request.GET.get('status')  
+
+    # 購入した商品に対してフィルタリングを行う
+    transactions = Transaction.objects.filter(buyer=request.user, status__in=['received', 'completed']) \
+        .select_related('product') \
+        .order_by('-created_at')  # 取引の新しい順で並べ替え
+
     if status_filter:
-        transactions = Transaction.objects.filter(buyer=request.user).filter(status=status_filter)
-    
+        transactions = transactions.filter(status=status_filter)  # 状態でさらに絞り込み
+
+    # 購入した商品のデータを整形
     data = [
         {
             'id': t.id,
             'title': t.product.title,
             'price': float(t.product.price),
             'status': t.status,
+            'buyer': t.buyer_id,
+            'seller': t.seller_id,
+            'created': t.created_at,
         }
         for t in transactions
     ]
+    
     return JsonResponse({'purchased_items': data})
+
 
 # 出品した商品ビュー
 @login_required
@@ -143,21 +167,24 @@ def sold_items(request):
 # 取引中の商品ビュー
 @login_required
 def trading_items(request):
-    # 未発送または発送済みの取引をフィルタリング
-    trading_transactions = Transaction.objects.filter(
-        status__in=['order_confirmed', 'pending', 'shipped']
-    ).select_related('product')
-    
-    # 必要なデータを抽出
+    # ログイン中のユーザーが購入者または販売者として取引に関わるものを取得
+    transactions = Transaction.objects.filter(
+        (Q(buyer=request.user) | Q(seller=request.user))  # 購入者または販売者が現在のユーザーである
+    ).exclude(status__in=['received', '受け取り完了'])  # ステータスが 'received' または '受け取り完了' 以外
+
+    # 取引を新しい順に並べ替え
+    transactions = transactions.order_by('-id')  # idの降順で新しい取引を先に表示
+
     data = [
         {
-            'id': transaction.id,
-            'title': transaction.product.title,
-            'price': transaction.product.price,
-            'status': transaction.get_status_display(),
+            'id': t.id,
+            'title': t.product.title,
+            'price': float(t.product.price),
+            'status': t.status,
+            'buyer': t.buyer_id,
+            'seller': t.seller_id,
+            'created': t.created_at,
         }
-        for transaction in trading_transactions
+        for t in transactions
     ]
-    
-    # JsonResponseで返す
     return JsonResponse({'trading_items': data})
