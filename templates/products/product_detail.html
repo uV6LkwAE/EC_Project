@@ -176,6 +176,13 @@
     <div class="row">
         <!-- 商品スライダー部分（左側）-->
         <div class="col-md-7 position-relative">
+            {% if product.status == "sold_out" %}
+                <!-- SOLDレイヤー（SVGを直接埋め込み） -->
+                <div class="sold-overlay">
+                    <object type="image/svg+xml" data="../../static/images/sold_layer.svg" class="sold-image"></object>
+                </div>
+            {% endif %}
+
             <!-- メインスライダー -->
             <div class="splide splide-main" aria-label="メインスライダー">
                 <div class="splide__track">
