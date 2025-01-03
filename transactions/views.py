@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from .models import Transaction
 from products.models import Product
+from django.urls import reverse 
 
 @login_required
 def initiate_transaction(request, product_id):
@@ -70,6 +71,15 @@ def update_transaction_status(request, transaction_id):
 @login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
+
+    # 購入者または出品者でない場合、GETリクエストをブロックして商品詳細ページへリダイレクト
+    if request.user != transaction.buyer and request.user != transaction.seller:
+        return render(request, 'transactions/detail.html', {
+            'is_get_blocked': True,
+            'transaction': transaction,
+            'product_id': transaction.product.id,
+            'product': transaction.product,
+        })
     
     # ステータスに応じた進行具合を計算
     if transaction.status == 'order_confirmed':
