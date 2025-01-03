@@ -4,6 +4,14 @@
 {% block title %}取引詳細{% endblock %}
 
 {% block content %}
+
+{% if is_get_blocked %}
+<script type="text/javascript">
+    alert('不正な操作です。商品詳細ページに移動します。');
+    window.location.href = "{% url 'products:product_detail' product.id %}";
+</script>
+{% endif %}
+<p>{{ transaction.product.id }}</p>
 <h2>取引詳細</h2>
 <p>商品: {{ transaction.product.title }}</p>
 <p>価格: ¥{{ transaction.product.price }}</p>
