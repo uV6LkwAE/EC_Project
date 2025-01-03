@@ -4,12 +4,20 @@
 {% block title %}購入確認{% endblock %}
 
 {% block content %}
-<form method="post">
-    {% csrf_token %}
+    {% if is_post_blocked %}
+        <script type="text/javascript">
+            alert('不正な操作です。商品詳細ページに移動します。');
+            window.location.href = "{% url 'products:product_detail' product.id %}";
+        </script>
+    {% endif %}
+
     <h2>商品: {{ product.title }}</h2>
     <p>価格: {{ product.price }}円</p>
-    <label for="shipping_address">配送先:</label>
-    <textarea id="shipping_address" name="shipping_address" required></textarea>
-    <button type="submit">購入を確定する</button>
-</form>
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="shipping_address">配送先:</label>
+        <textarea id="shipping_address" name="shipping_address" required></textarea>
+        <button type="submit">購入を確定する</button>
+    </form>
 {% endblock %}
