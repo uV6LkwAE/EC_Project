@@ -69,14 +69,25 @@
 
         var commentsDisabled = "{{ comments_disabled|yesno:'true,false' }}"; // 'true' or 'false'として埋め込む
 
+        // if (commentsDisabled === 'true') {
+        //     // コメント投稿用のplaceholderを変更
+        //     document.getElementById('comment-textarea').placeholder = "売り切れのため、コメントできません";
+        //     // 返信用のplaceholderを変更
+        //     document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
+        // }
+
         if (commentsDisabled === 'true') {
-            // コメント投稿用のplaceholderを変更
+            // コメントが存在し、売り切れの場合
+            const commentsContainer = document.getElementById('comments');  // コメントの親要素
+            const replyTextarea = document.getElementById('reply-textarea');  // 返信用textarea
+
             document.getElementById('comment-textarea').placeholder = "売り切れのため、コメントできません";
-            // 返信用のplaceholderを変更
-            document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
+
+            if (commentsContainer && commentsContainer.children.length > 0 && replyTextarea) {
+                // コメントが1件以上あり、返信用のtextareaが存在する場合
+                replyTextarea.placeholder = "売り切れのため、返信できません";
+            }
         }
-
-
     });
 
     // モーダルウィンドウを表示する関数
