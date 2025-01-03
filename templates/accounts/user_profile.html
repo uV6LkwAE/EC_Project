@@ -1,5 +1,6 @@
 
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}
     {{ user.username }} の出品した商品
@@ -50,6 +51,12 @@
             <div class="col-md-4 mb-4">
                 <div class="card hover-effect">
                     <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                    {% if product.status == "sold_out" %}
+                        <!-- SOLDレイヤー（SVGを直接埋め込み） -->
+                        <div class="sold-overlay">
+                            <object type="image/svg+xml" data="{% static 'images/sold_layer.svg' %}" class="sold-image"></object>
+                        </div>
+                    {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ product.title }}</h5>
                         <p class="card-text">{{ product.description|truncatewords:20 }}</p>
@@ -102,6 +109,27 @@
         transform: scale(1.05); /* カードが少し広がる（1.05倍） */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
     }
+
+    .card-img-top {
+        position: relative;
+        width: 100%; /* 必要に応じて調整 */
+        height: 100%; /* 必要に応じて調整 */
+        overflow: hidden;
+    }
+
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; /* 親要素にぴったり合わせる */
+    }
+
+    .sold-image {
+        width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
+        height: 100%; /* 同じく高さも合わせる */
+    }
+
 
 </style>
 {% endblock %}
