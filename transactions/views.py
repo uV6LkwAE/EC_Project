@@ -1,9 +1,11 @@
 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
-from .models import Transaction
+from .models import Transaction, TransactionRating
+from .forms import TransactionRatingForm
 from products.models import Product
 from django.urls import reverse 
+# from django.contrib import messages
 
 @login_required
 def initiate_transaction(request, product_id):
@@ -56,21 +58,52 @@ def update_transaction_status(request, transaction_id):
         # 購入者が注文確定を行う場合
             transaction.status = 'order_confirmed'
             transaction.save()
+            # messages.add_message(request, messages.INFO, 'ステータスが注文確定に変更されました。ページをリロードしてください。')
         elif new_status == 'shipped' and request.user == transaction.seller and transaction.status == 'order_confirmed':
         # 販売者が発送を行う場合
             transaction.status = 'shipped'
             transaction.save()
+            # messages.add_message(request, messages.INFO, 'ステータスが発送済みに変更されました。ページをリロードしてください。')
         elif new_status == 'received' and request.user == transaction.buyer and transaction.status == 'shipped':
         # 購入者が受け取りを完了する場合
             transaction.status = 'received'
             transaction.save()
+            # messages.add_message(request, messages.INFO, 'ステータスが受け取り完了に変更されました。ページをリロードしてください。')
 
+        # 更新が成功した場合、メッセージを追加
+        # messages.success(request, 'ステータスが更新されました。ページをリロードします。')
+        
+        # 出品者と購入者両方が評価を行った後に、取引完了に変更
+        seller_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
+        buyer_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.buyer).exists()
+
+        if seller_rating and buyer_rating:
+            transaction.status = 'completed'
+            transaction.save()
 
     return redirect('transactions:transaction_detail', transaction_id=transaction.id)
 
 @login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
+
+    # 出品者または購入者の評価がまだ投稿されていないか確認
+    seller_rating_exists = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
+    buyer_rating_exists = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.buyer).exists()
+
+    # ログイン中のユーザーが評価を投稿したか
+    user_is_buyer = request.user == transaction.buyer
+    user_is_seller = request.user == transaction.seller
+    user_rating_exists = TransactionRating.objects.filter(transaction=transaction, rater=request.user).exists()
+
+    # デバッグ用メッセージ
+    debug_message = f"ログインユーザー: {request.user.username} は、"
+    if user_is_buyer:
+        debug_message += "購入者です。"
+    elif user_is_seller:
+        debug_message += "出品者です。"
+    else:
+        debug_message += "購入者でも出品者でもありません。"
 
     # 購入者または出品者でない場合、GETリクエストをブロックして商品詳細ページへリダイレクト
     if request.user != transaction.buyer and request.user != transaction.seller:
@@ -80,20 +113,146 @@ def transaction_detail(request, transaction_id):
             'product_id': transaction.product.id,
             'product': transaction.product,
         })
-    
-    # ステータスに応じた進行具合を計算
+
+    # ステータスに応じてパーセンテージを設定
     if transaction.status == 'order_confirmed':
         progress_percentage = 0  # 注文確定は0%
     elif transaction.status == 'pending':
-        progress_percentage = 25  # 未発送は25%
+        progress_percentage = 20  # 未発送は20%
     elif transaction.status == 'shipped':
-        progress_percentage = 75  # 発送済みは75%
+        progress_percentage = 40  # 発送済みは40%
     elif transaction.status == 'received':
-        progress_percentage = 100  # 受け取り完了は100%
+        progress_percentage = 60  # 受け取り完了は60%
+    elif transaction.status == 'completed':  # 取引完了を100%に変更
+        progress_percentage = 100  # 完了は100%
     else:
         progress_percentage = 0  # デフォルト値
 
+
+    # 評価フォーム処理
+    if request.method == 'POST':
+        form = TransactionRatingForm(request.POST)
+        if form.is_valid():
+            # 評価の保存
+            form.instance.transaction = transaction
+            form.instance.rater = request.user
+            form.instance.rated_user = transaction.seller if request.user == transaction.buyer else transaction.buyer
+            form.save()
+
+            # 評価後に取引完了に変更するロジック
+            seller_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
+            buyer_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.buyer).exists()
+
+            if seller_rating and buyer_rating:
+                transaction.status = 'completed'
+                transaction.save()
+
+            return redirect('transactions:transaction_detail', transaction_id=transaction.id)
+    else:
+        form = TransactionRatingForm()
+        
     return render(request, 'transactions/detail.html', {
         'transaction': transaction,
         'progress_percentage': progress_percentage,
+        'form': form,
+        'user_rating_exists': user_rating_exists,
+        'seller_rating_exists': seller_rating_exists,
+        'buyer_rating_exists': buyer_rating_exists,
+        'user_is_buyer': user_is_buyer,
+        'user_is_seller': user_is_seller,
+        # 'alert_message': alert_message, 
+        'debug_message': debug_message,
     })
+
+@login_required
+def submit_transaction_rating(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+
+    # 出品者または購入者の評価がまだ投稿されていないか確認
+    seller_rating_exists = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
+    buyer_rating_exists = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.buyer).exists()
+
+    # ログイン中のユーザーが評価を投稿したか
+    user_is_buyer = request.user == transaction.buyer
+    user_is_seller = request.user == transaction.seller
+    user_rating_exists = TransactionRating.objects.filter(transaction=transaction, rater=request.user).exists()
+
+    # 取引が受け取り完了かつ、評価がまだ投稿されていない場合にのみ処理を行う
+    if transaction.status == 'received':
+        # すでに評価が投稿されているか確認
+        existing_rating = TransactionRating.objects.filter(transaction=transaction)
+        
+        # 出品者から購入者への評価が存在するか
+        seller_to_buyer_rating = existing_rating.filter(rated_user=transaction.buyer, rater=transaction.seller).exists()
+        
+        # 購入者から出品者への評価が存在するか
+        buyer_to_seller_rating = existing_rating.filter(rated_user=transaction.seller, rater=transaction.buyer).exists()
+
+        # 両方の評価が存在しない場合のみ投稿を許可
+        if seller_to_buyer_rating and buyer_to_seller_rating:
+            error_message = "評価はすでに両者から投稿されています。"
+            return render(request, 'transactions/detail.html', {
+                'transaction': transaction,
+                'error_message': error_message,
+                'user_rating_exists': user_rating_exists,
+                'seller_rating_exists': seller_rating_exists,
+                'buyer_rating_exists': buyer_rating_exists,
+                'user_is_buyer': user_is_buyer,
+                'user_is_seller': user_is_seller,
+            })
+
+        # 評価を送信したユーザーが出品者か購入者であることを確認
+        if request.user != transaction.buyer and request.user != transaction.seller:
+            return redirect('products:product_list')  # 出品者でも購入者でもない場合はリダイレクト
+
+        if request.method == 'POST':
+            form = TransactionRatingForm(request.POST)
+            if form.is_valid():
+                rating = form.save(commit=False)
+                rating.transaction = transaction
+                rating.rater = request.user
+                # 出品者が購入者を評価する場合と購入者が出品者を評価する場合
+                if request.user == transaction.buyer:
+                    rating.rated_user = transaction.seller
+                else:
+                    rating.rated_user = transaction.buyer
+                rating.save()
+
+                # 両者が評価した場合、取引を「取引完了」に更新
+                seller_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
+                buyer_rating = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.buyer).exists()
+
+                if seller_rating and buyer_rating:
+                    transaction.status = 'completed'
+                    transaction.save()
+
+                # 成功メッセージを設定
+                return render(request, 'transactions/detail.html', {
+                    'transaction': transaction,
+                    'success_message': "評価が正常に送信されました。",
+                    'user_rating_exists': user_rating_exists,
+                    'seller_rating_exists': seller_rating_exists,
+                    'buyer_rating_exists': buyer_rating_exists,
+                    'user_is_buyer': user_is_buyer,
+                    'user_is_seller': user_is_seller,
+                })
+            
+            else:
+                # フォームが無効の場合、エラーメッセージを渡す
+                error_message = "評価の投稿に失敗しました。再度試してください。"
+                return render(request, 'transactions/detail.html', {
+                    'transaction': transaction,
+                    'error_message': error_message,
+                    'user_rating_exists': user_rating_exists,
+                    'seller_rating_exists': seller_rating_exists,
+                    'buyer_rating_exists': buyer_rating_exists,
+                    'user_is_buyer': user_is_buyer,
+                    'user_is_seller': user_is_seller,
+                })
+
+        else:
+            form = TransactionRatingForm()
+        
+        return render(request, 'transactions/rating_form.html', {'form': form, 'transaction': transaction})
+
+    return redirect('transactions:transaction_detail', transaction_id=transaction.id)
