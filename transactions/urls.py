@@ -8,4 +8,5 @@ urlpatterns = [
     path('initiate/<int:product_id>/', views.initiate_transaction, name='initiate_transaction'),
     path('detail/<int:transaction_id>/', views.transaction_detail, name='transaction_detail'),
     path('update/<int:transaction_id>/', views.update_transaction_status, name='update_transaction_status'),
+    path('rating/<int:transaction_id>/', views.submit_transaction_rating, name='submit_transaction_rating'),
 ]

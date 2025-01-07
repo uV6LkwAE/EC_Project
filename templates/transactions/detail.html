@@ -1,17 +1,65 @@
 
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}取引詳細{% endblock %}
 
 {% block content %}
 
+<!-- viewで出品者,購入者以外のリクエストをブロック -->
 {% if is_get_blocked %}
 <script type="text/javascript">
+    // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
     alert('不正な操作です。商品詳細ページに移動します。');
     window.location.href = "{% url 'products:product_detail' product.id %}";
 </script>
 {% endif %}
-<p>{{ transaction.product.id }}</p>
+
+{% if transaction.status == 'received' %}
+    {% if not user_rating_exists %}
+        <!-- ログイン中のユーザーが評価を投稿していない場合、かつフォーム送信時以外に発火する -->
+        {% if not form.is_submitted %}
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function() {
+                    alert("両者から評価が投稿されると、取引が完了します");
+                    
+                    // #ratingModalをクリックする
+                    var modalButton = document.getElementById('ratingModalButton');  // ボタンにidを追加
+                    if (modalButton) {
+                        modalButton.click();  // ボタンをクリックしてモーダルを開く
+                    }
+                });
+            </script>
+        {% endif %}
+    {% endif %}
+{% endif %}
+
+
+{% if success_message %}
+    <script type="text/javascript">
+        alert("{{ success_message }}");
+        window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
+    </script>
+{% endif %}
+
+{% if error_message %}
+<script type="text/javascript">
+    // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
+    // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
+    // フォームが無効の場合
+    alert("{{ error_message }}");
+    window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
+</script>
+{% endif %}
+
+{% if alert_message %}
+    <script type="text/javascript">
+        alert("{{ alert_message }}");
+    </script>
+{% endif %}
+
+
 <h2>取引詳細</h2>
 <p>商品: {{ transaction.product.title }}</p>
 <p>価格: ¥{{ transaction.product.price }}</p>
@@ -20,11 +68,9 @@
 <p>配送先: {{ transaction.shipping_address }}</p>
 <p>ステータス: {{ transaction.get_status_display }}</p>
 
-<p>DEBUG: {{ transaction.status }}</p>
-
 <!-- 購入者用メッセージ -->
 {% if user == transaction.buyer and transaction.status == "pending" %}
-<p>商品が発送されるまでお待ちください。</p>
+    <p>商品が発送されるまでお待ちください。</p>
 {% endif %}
 
 <!-- 出品者用のボタン -->
@@ -41,15 +87,105 @@
 <form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
     {% csrf_token %}
     <input type="hidden" name="status" value="received">
-    <button type="submit" class="btn btn-success">商品を受け取る</button>
+    <button type="submit" class="btn btn-success" id="receiveBtn">商品受け取り完了</button>
 </form>
 {% endif %}
 
+<!-- 評価モーダルボタン -->
+{% if transaction.status == 'received' %}
+    {% if user_is_buyer %}
+        {% if user_rating_exists %}
+            <!-- 購入者が評価をすでに投稿している場合 -->
+            <button type="button" class="btn btn-secondary" disabled>
+                あなたはすでに評価を投稿しています。
+            </button>
+        {% else %}
+            <!-- 購入者が評価を投稿していない場合 -->
+            <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                出品者を評価する
+            </button>
+        {% endif %}
+    {% elif user_is_seller %}
+        {% if user_rating_exists %}
+            <!-- 出品者が評価をすでに投稿している場合 -->
+            <button type="button" class="btn btn-secondary" disabled>
+                あなたはすでに評価を投稿しています。
+            </button>
+        {% else %}
+            <!-- 出品者が評価を投稿していない場合 -->
+            <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                購入者を評価する
+            </button>
+        {% endif %}
+    {% endif %}
+
+    <!-- 相手が評価を投稿しているかどうか -->
+    <p>
+        {% if user_is_buyer %}
+            あなたは購入者です。
+            出品者は
+            {% if buyer_rating_exists %}
+                すでに評価を投稿しています。
+            {% else %}
+                評価をまだ投稿していません。
+                両者から評価が投稿されると、取引が完了します。
+            {% endif %}
+        {% elif user_is_seller %}
+            あなたは出品者です。
+            購入者は
+            {% if seller_rating_exists %}
+                すでに評価を投稿しています。
+            {% else %}
+                評価をまだ投稿していません。
+                両者から評価が投稿されると、取引が完了します。  
+            {% endif %}
+        {% endif %}
+    </p>
+{% endif %}
+
+{{ debug_message }}
+
+
+<!-- 評価モーダル (フォーム) -->
+<div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ratingModalLabel">相互評価</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'transactions:submit_transaction_rating' transaction.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <label for="rating">評価</label>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" id="good" name="rating" value="good" required>
+                        <label class="form-check-label" for="good">良かった</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" id="bad" name="rating" value="bad">
+                        <label class="form-check-label" for="bad">残念だった</label>
+                    </div>
+
+                    <label for="comment" class="mt-3">コメント</label>
+                    <textarea class="form-control" id="comment" name="comment" rows="3" placeholder="コメントを入力してください"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                    <button type="submit" class="btn btn-primary">投稿</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <ul class="progressbar">
     <li class="{% if progress_percentage >= 0 %}active{% endif %}">注文確定</li>
-    <li class="{% if progress_percentage >= 25 %}active{% endif %} {% if progress_percentage >= 50 %}complete{% endif %}">未発送</li>
-    <li class="{% if progress_percentage >= 75 %}active{% endif %} {% if progress_percentage >= 100 %}complete{% endif %}">発送済み</li>
-    <li class="{% if progress_percentage == 100 %}active{% endif %}">受け取り完了</li>
+    <li class="{% if progress_percentage >= 20 %}active{% endif %} {% if progress_percentage >= 40 %}complete{% endif %}">未発送</li>
+    <li class="{% if progress_percentage >= 40 %}active{% endif %} {% if progress_percentage >= 60 %}complete{% endif %}">発送済み</li>
+    <li class="{% if progress_percentage >= 60 %}active{% endif %} {% if progress_percentage >= 80 %}complete{% endif %}">受け取り完了</li>
+    <li class="{% if progress_percentage == 100 %}active complete{% endif %}">取引完了</li>
 </ul>
 
 <style>
