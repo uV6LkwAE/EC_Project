@@ -9,11 +9,11 @@
 
 <!-- viewで出品者,購入者以外のリクエストをブロック -->
 {% if is_get_blocked %}
-<script type="text/javascript">
-    // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
-    alert('不正な操作です。商品詳細ページに移動します。');
-    window.location.href = "{% url 'products:product_detail' product.id %}";
-</script>
+    <script type="text/javascript">
+        // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
+        alert('不正な操作です。商品詳細ページに移動します。');
+        window.location.href = "{% url 'products:product_detail' product.id %}";
+    </script>
 {% endif %}
 
 {% if transaction.status == 'received' %}
@@ -35,6 +35,17 @@
     {% endif %}
 {% endif %}
 
+{% if transaction.status == 'completed' %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // アラートを表示
+        alert("取引が完了しました。\n完了した取引は購入した商品で確認できます。\nプロフィールページに移動します。");
+
+        // アラート後にプロフィールページへ遷移
+        window.location.href = "{% url 'accounts:profile' %}";  // アカウントページに遷移
+    });
+</script>
+{% endif %}
 
 {% if success_message %}
     <script type="text/javascript">
@@ -44,13 +55,13 @@
 {% endif %}
 
 {% if error_message %}
-<script type="text/javascript">
-    // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
-    // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
-    // フォームが無効の場合
-    alert("{{ error_message }}");
-    window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
-</script>
+    <script type="text/javascript">
+        // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
+        // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
+        // フォームが無効の場合
+        alert("{{ error_message }}");
+        window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
+    </script>
 {% endif %}
 
 {% if alert_message %}
