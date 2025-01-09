@@ -4,6 +4,7 @@
 {% block title %}マイページ{% endblock %}
 
 {% block content %}
+
 <div class="container mt-5">
     <div class="text-center p-4 bg-light rounded shadow-sm">
         <!-- アイコン -->
@@ -24,9 +25,79 @@
                 <i class="bi bi-star text-secondary"></i>
             </div>
             <!-- プロフィール編集ボタン -->
-            <a href="{% url 'accounts:profile_edit' %}" class="btn btn-link ms-2">
-                <i class="bi bi-box-arrow-in-right"></i> プロフィールを編集
-            </a>
+            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#profileEditModal">
+                <i class="bi bi-pencil-square"></i> プロフィールを編集
+            </button>
+            <!-- プロフィール編集モーダル -->
+            <div class="modal fade" id="profileEditModal" tabindex="-1" aria-labelledby="profileEditModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="profileEditModalLabel">プロフィール編集</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post" enctype="multipart/form-data" action="{% url 'accounts:profile_edit' %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <!-- エラーメッセージ -->
+                                {% if form.errors %}
+                                    <div class="alert alert-danger">
+                                        <ul>
+                                            {% for field in form %}
+                                                {% for error in field.errors %}
+                                                    <li>{{ field.label }}: {{ error }}</li>
+                                                {% endfor %}
+                                            {% endfor %}
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+
+                                <!-- アイコン -->
+                                <div class="mb-3">
+                                    <label for="id_icon" class="form-label">アイコン</label>
+                                    {% if user.icon %}
+                                        <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン" class="img-fluid rounded-circle" style="width: 10vw; height: 10vw; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        <input type="file" name="icon" class="form-control">
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- ユーザー名 -->
+                                <div class="mb-3">
+                                    <label for="id_username" class="form-label">ユーザー名</label>
+                                    <input type="text" name="username" value="{{ user.username }}" class="form-control">
+                                </div>
+
+                                <!-- メールアドレス -->
+                                <div class="mb-3">
+                                    <label for="id_email" class="form-label">メールアドレス</label>
+                                    <input type="email" name="email" value="{{ user.email }}" class="form-control">
+                                </div>
+
+                                <!-- 年齢 -->
+                                <div class="mb-3">
+                                    <label for="id_age" class="form-label">年齢</label>
+                                    <input type="number" name="age" value="{{ user.age }}" class="form-control">
+                                </div>
+
+                                <!-- 住所 -->
+                                <div class="mb-3">
+                                    <label for="id_address" class="form-label">住所</label>
+                                    <!-- 住所がNullの場合、Nullが直接表示されてしまうため、Noneの際に空文字列を表示 -->
+                                    <input type="text" name="address" value="{% if user.address != None %}{{ user.address }}{% else %}{% endif %}" class="form-control">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">保存する</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
         <!-- ボタンリスト -->
         <div class="d-flex justify-content-center gap-3 mt-4">

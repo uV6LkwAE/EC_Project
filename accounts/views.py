@@ -64,12 +64,18 @@ class MypageView(LoginRequiredMixin, TemplateView):
 class MypageEditView(LoginRequiredMixin, UpdateView):
     model = CustomUser
     form_class = ProfileEditForm
-    template_name = 'accounts/my_profile_edit.html'
+    template_name = 'accounts/my_page.html'
     success_url = reverse_lazy('accounts:profile')
 
     def get_object(self, queryset=None):
         # 現在のログイン中のユーザーを返す
         return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # フォームのインスタンスをコンテキストに渡す
+        context['form'] = self.get_form()
+        return context
 
 # 他のユーザーのプロフィールビュー
 class ProfileView(TemplateView):
@@ -124,13 +130,14 @@ def purchased_items(request):
     # クエリパラメータで状態を取得
     status_filter = request.GET.get('status')  
 
-    # 購入した商品に対してフィルタリングを行う
-    transactions = Transaction.objects.filter(buyer=request.user, status__in=['received', 'completed']) \
-        .select_related('product') \
-        .order_by('-created_at')  # 取引の新しい順で並べ替え
-
-    if status_filter:
-        transactions = transactions.filter(status=status_filter)  # 状態でさらに絞り込み
+    # completedがクエリ作成時に文字列にならないため、クエリを直接実行
+    transactions = Transaction.objects.raw(
+        "SELECT * FROM transactions_transaction WHERE buyer_id = %s AND status = 'completed'",
+        [request.user.id]
+    )
+    
+    # デバッグ用
+    # print(transactions.query)
 
     # 購入した商品のデータを整形
     data = [
@@ -170,7 +177,7 @@ def trading_items(request):
     # ログイン中のユーザーが購入者または販売者として取引に関わるものを取得
     transactions = Transaction.objects.filter(
         (Q(buyer=request.user) | Q(seller=request.user))  # 購入者または販売者が現在のユーザーである
-    ).exclude(status__in=['received', '受け取り完了'])  # ステータスが 'received' または '受け取り完了' 以外
+    ).exclude(status__in=['completed', '取引完了'])  # ステータスが 'received' または '受け取り完了' 以外
 
     # 取引を新しい順に並べ替え
     transactions = transactions.order_by('-id')  # idの降順で新しい取引を先に表示
