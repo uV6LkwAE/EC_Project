@@ -9,11 +9,11 @@
 
 <!-- viewで出品者,購入者以外のリクエストをブロック -->
 {% if is_get_blocked %}
-<script type="text/javascript">
-    // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
-    alert('不正な操作です。商品詳細ページに移動します。');
-    window.location.href = "{% url 'products:product_detail' product.id %}";
-</script>
+    <script type="text/javascript">
+        // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
+        alert('不正な操作です。商品詳細ページに移動します。');
+        window.location.href = "{% url 'products:product_detail' product.id %}";
+    </script>
 {% endif %}
 
 {% if transaction.status == 'received' %}
@@ -22,7 +22,7 @@
         {% if not form.is_submitted %}
             <script type="text/javascript">
                 document.addEventListener('DOMContentLoaded', function() {
-                    alert("両者から評価が投稿されると、取引が完了します");
+                    alert("ステータスが受け取り完了に更新されました。\n両者から評価が投稿されると、取引が完了します");
                     
                     // #ratingModalをクリックする
                     var modalButton = document.getElementById('ratingModalButton');  // ボタンにidを追加
@@ -35,6 +35,17 @@
     {% endif %}
 {% endif %}
 
+{% if transaction.status == 'completed' %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // アラートを表示
+        alert("取引が完了しました。\n完了した取引は購入した商品で確認できます。\nプロフィールページに移動します。");
+
+        // アラート後にプロフィールページへ遷移
+        window.location.href = "{% url 'accounts:profile' %}";  // アカウントページに遷移
+    });
+</script>
+{% endif %}
 
 {% if success_message %}
     <script type="text/javascript">
@@ -44,13 +55,13 @@
 {% endif %}
 
 {% if error_message %}
-<script type="text/javascript">
-    // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
-    // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
-    // フォームが無効の場合
-    alert("{{ error_message }}");
-    window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
-</script>
+    <script type="text/javascript">
+        // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
+        // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
+        // フォームが無効の場合
+        alert("{{ error_message }}");
+        window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
+    </script>
 {% endif %}
 
 {% if alert_message %}
@@ -73,13 +84,25 @@
     <p>商品が発送されるまでお待ちください。</p>
 {% endif %}
 
-<!-- 出品者用のボタン -->
 {% if user == transaction.seller and transaction.status == "order_confirmed" %}
-<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
-    {% csrf_token %}
-    <input type="hidden" name="status" value="shipped">
-    <button type="submit" class="btn btn-primary">発送完了</button>
-</form>
+    <form id="shipping-form" method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="shipped">
+        <button type="submit" class="btn btn-primary" id="shipping-btn">発送完了</button>
+    </form>
+
+    <script type="text/javascript">
+        document.getElementById('shipping-form').addEventListener('submit', function(event) {
+            // 送信イベントをキャンセルしてアラートを表示
+            event.preventDefault();
+
+            // アラートを表示
+            alert("ステータスが発送完了に更新されました。\n相手が商品を受け取るまでお待ちください。");
+
+            // アラート後にフォームを送信
+            this.submit();
+        });
+    </script>
 {% endif %}
 
 <!-- 購入者用のボタン -->

@@ -11,13 +11,20 @@ from django.urls import reverse
 def initiate_transaction(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
-    # すでに取引が行われている場合
-    if Transaction.objects.filter(product=product, status='order_confirmed').exists():
-        # 商品詳細ページへのリダイレクトをJavaScriptで行う
-        if request.method == "POST":
-            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
-        else:
-            return render(request, 'transactions/confirm.html', {'product': product, 'is_post_blocked': True})
+    # テンプレート側で"不正な操作です"とすべて表示
+    # 出品者自身による購入を禁止
+    if request.user == product.seller:
+        return render(request, 'transactions/confirm.html', {
+            'product': product,
+            'is_post_blocked': True,
+        })
+
+    # すでに取引レコードが存在する場合をブロック（statusに関係なくブロック）
+    if Transaction.objects.filter(product=product).exists():
+        return render(request, 'transactions/confirm.html', {
+            'product': product,
+            'is_post_blocked': True,
+        })
 
     # 商品が売り切れの場合も同様に
     if product.status == 'sold_out':

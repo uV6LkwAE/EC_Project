@@ -64,12 +64,18 @@ class MypageView(LoginRequiredMixin, TemplateView):
 class MypageEditView(LoginRequiredMixin, UpdateView):
     model = CustomUser
     form_class = ProfileEditForm
-    template_name = 'accounts/my_profile_edit.html'
+    template_name = 'accounts/my_page.html'
     success_url = reverse_lazy('accounts:profile')
 
     def get_object(self, queryset=None):
         # 現在のログイン中のユーザーを返す
         return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # フォームのインスタンスをコンテキストに渡す
+        context['form'] = self.get_form()
+        return context
 
 # 他のユーザーのプロフィールビュー
 class ProfileView(TemplateView):
@@ -136,7 +142,7 @@ def purchased_items(request):
     # 購入した商品のデータを整形
     data = [
         {
-            'id': t.id,
+            'id': t.product.id,
             'title': t.product.title,
             'price': float(t.product.price),
             'status': t.status,
