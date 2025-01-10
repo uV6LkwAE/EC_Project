@@ -14,6 +14,7 @@ import json
 from django.http import JsonResponse
 from django.http import HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 import logging
 
 
@@ -372,7 +373,13 @@ def toggle_favorite(request, product_id):
 def favorite_list(request):
     favorites = Favorite.objects.filter(user=request.user)
     products = [favorite.product for favorite in favorites]
-    return render(request, 'products/favorite_list.html', {'products': products})
+
+    # ページネーションを適用
+    paginator = Paginator(products, 10)  # 1ページあたり10件
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'products/favorite_list.html', {'page_obj': page_obj})
 
 
 # 画像削除関連のバグが再発生する可能性があるため残しておく
