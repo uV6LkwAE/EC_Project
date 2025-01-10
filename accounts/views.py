@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin  # ユーザーがロ�
 from django.contrib.auth.views import LoginView, LogoutView  # Django標準のログインビューをインポート
 from .forms import SignupForm, CustomLoginForm, ProfileEditForm  # カスタムログインフォームをインポート
 from .models import CustomUser
-
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from transactions.models import Transaction
@@ -97,7 +97,14 @@ class ProfileView(TemplateView):
         if search_query:
             products = products.filter(title__icontains=search_query)  # 商品タイトルに検索ワードが含まれている商品を取得
 
-        context['products'] = products
+        # ページネーションを適用
+        paginator = Paginator(products, 10)  # 1ページあたり10件表示
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context['page_obj'] = page_obj
+        context['is_paginated'] = page_obj.has_other_pages()
+        context['search_query'] = search_query  # 検索クエリをテンプレートに渡す
         
         return context
 

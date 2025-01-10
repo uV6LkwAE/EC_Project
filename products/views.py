@@ -371,15 +371,25 @@ def toggle_favorite(request, product_id):
 
 @login_required
 def favorite_list(request):
+    # お気に入りの商品を取得
     favorites = Favorite.objects.filter(user=request.user)
     products = [favorite.product for favorite in favorites]
+
+    # 検索クエリを取得
+    search_query = request.GET.get('q', '')
+    if search_query:
+        # 検索クエリに基づいて商品をフィルタリング
+        products = [product for product in products if search_query.lower() in product.title.lower()]
 
     # ページネーションを適用
     paginator = Paginator(products, 10)  # 1ページあたり10件
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'products/favorite_list.html', {'page_obj': page_obj})
+    return render(request, 'products/favorite_list.html', {
+        'page_obj': page_obj,
+        'search_query': search_query,  # 検索クエリをテンプレートに渡す
+    })
 
 
 # 画像削除関連のバグが再発生する可能性があるため残しておく
