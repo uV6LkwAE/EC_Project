@@ -142,7 +142,7 @@ def purchased_items(request):
     # 購入した商品のデータを整形
     data = [
         {
-            'id': t.id,
+            'id': t.product.id,
             'title': t.product.title,
             'price': float(t.product.price),
             'status': t.status,
