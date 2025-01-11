@@ -368,6 +368,8 @@ class ProductListSearchView(ListView):
         """
         context = super().get_context_data(**kwargs)
 
+        queryset = self.get_queryset()
+
         # クエリパラメータをコピー
         cleaned_get = self.request.GET.copy()  
 
@@ -382,4 +384,7 @@ class ProductListSearchView(ListView):
         # クリーンされたパラメータをテンプレートに渡す
         context['query_params'] = cleaned_get  
 
+        # オブジェクトの数をテンプレートに渡し、10個以下であるかの判定をテンプレートで行う
+        context['object_count'] = queryset.count()
+        
         return context
