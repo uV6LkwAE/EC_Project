@@ -43,7 +43,7 @@
         </div>
         <div class="form-group">
             <label for="images">商品画像:</label>
-            <input type="file" id="file-input" name="images" multiple class="form-control-file">
+            <input type="file" id="file-input" name="images" multiple class="form-control-file" required>
         </div>
 
         <!-- プレビューエリア -->
@@ -179,6 +179,14 @@
             }
             container.remove(); // フロントエンドで画像プレビューを削除
             updateOrderData(); // 並び順を更新
+        }
+    });
+
+    document.querySelector('form').addEventListener('submit', function (event) {
+        const files = fileInput.files;
+        if (files.length === 0) {
+            alert('少なくとも1枚の画像をアップロードしてください。');
+            event.preventDefault(); // フォーム送信を中止
         }
     });
 
