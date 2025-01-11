@@ -32,6 +32,11 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         # 新しい画像を取得
         new_images = self.request.FILES.getlist('images')
 
+        # 画像必須チェック
+        if not new_images:
+            form.add_error(None, "少なくとも1枚の画像をアップロードしてください。")
+            return self.form_invalid(form)
+
         # 並び順データを取得
         order_data = self.request.POST.get('order_data', '[]')
         try:
@@ -122,6 +127,11 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         # フォームの基本情報を保存
         self.object = form.save()
+
+        # 画像必須チェック
+        if not new_images and existing_images.count() == 0:
+            form.add_error(None, "少なくとも1枚の画像をアップロードしてください。")
+            return self.form_invalid(form)
 
         # 並び替えデータの処理
         order_data = self.request.POST.get('order_data', '[]')
