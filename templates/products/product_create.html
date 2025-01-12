@@ -409,5 +409,12 @@
         console.log('Uploaded files array before submit:', uploadedFiles);
     });
 
+    document.getElementById("id_price").addEventListener("input", function () {
+        // 全角数字を半角数字に自動変換
+        this.value = this.value.replace(/[０-９]/g, function (s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+    });
+
 </script>
 {% endblock %}
