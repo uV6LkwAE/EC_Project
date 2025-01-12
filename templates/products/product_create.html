@@ -157,6 +157,13 @@
         font-size: 14px;
     }
 
+    #additional-upload-container {
+        width: 100%;
+        aspect-ratio: 1; /* 幅と高さを正方形にする */
+        border: none; /* 既に内側のlabelにborderがあるので不要 */
+    }
+
+
     #additional-upload:hover {
         background-color: #f0f0f0;
         color: #333;
@@ -166,6 +173,16 @@
         display: none; /* input要素は非表示 */
     }
 
+    .sortable-ghost {
+        opacity: 0 !important;
+        visibility: visible !important;
+    }
+
+
+    /* .image-container.sortable-chosen img {
+        opacity: 1 !important;
+        visibility: visible !important;
+    } */
 </style>
 
 <!-- JavaScript -->
@@ -293,9 +310,46 @@
         }
     }
 
+    // new Sortable(imagePreview, {
+    //     animation: 150,
+    //     onEnd: updateOrderData,
+    //     fallback: true,
+    //     ghostClass: 'sortable-ghost',
+    //     filter: '#additional-upload-container', 
+    //     onMove: (evt) => {
+    //         return evt.related !== document.getElementById('additional-upload-container');
+    //     }
+    // });
+
     new Sortable(imagePreview, {
         animation: 150,
-        onEnd: updateOrderData
+        onEnd: updateOrderData,
+        fallback: true,
+        filter: '#additional-upload-container',
+        onMove: (evt) => {
+            return evt.related !== document.getElementById('additional-upload-container');
+        },
+
+        setDragImage: function (draggedElement, dragImage, evt) {
+            const clonedElement = draggedElement.cloneNode(true);
+            clonedElement.style.opacity = '0';
+            clonedElement.style.position = 'absolute';
+            clonedElement.style.top = '-9999px';
+            clonedElement.style.left = '-9999px';
+            document.body.appendChild(clonedElement);
+            evt.dataTransfer.setDragImage(clonedElement, 0, 0);
+            // evt.dataTransfer.setDragImage(clonedElement, draggedElement.offsetWidth / 2, draggedElement.offsetHeight / 2);
+
+            // ドラッグ終了時にクローン要素を削除
+            setTimeout(() => {
+                document.body.removeChild(clonedElement);
+            }, 0);
+        },
+        onStart: function (evt) {
+            // 初回ドラッグ時の透明化対策
+            evt.dragged.style.opacity = '1';
+            evt.dragged.style.visibility = 'visible'; // visibilityも確実に表示
+        }
     });
 
     function updateOrderData() {
