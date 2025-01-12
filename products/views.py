@@ -39,7 +39,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
 
         # 画像必須チェック
         if not new_images and self.object.images.count() == 0:
-            form.add_error(None, "少なくとも1枚の画像をアップロードしてください。")
+            form.add_error(None, "画像をアップロードしてください。")
             return self.form_invalid(form)
 
         # 並び順データを取得

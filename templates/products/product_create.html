@@ -10,7 +10,7 @@
 
     <!-- エラーメッセージの表示 -->
     {% if form.non_field_errors %}
-    <div class="alert alert-danger">
+    <div id="error-message" class="alert alert-danger">
         <ul>
             {% for error in form.non_field_errors %}
                 <li>{{ error }}</li>
@@ -28,7 +28,7 @@
             <p>ドラッグ＆ドロップ<br>またはファイルを選択</p>
             <button type="button" id="select-button" class="btn btn-secondary">ファイルを選択</button>
             <small>10枚まで</small>
-            <input type="file" id="file-input" name="images" multiple accept="image/*" hidden required>
+            <input type="file" id="file-input" name="images" multiple accept="image/*" hidden>
         </div>
 
         <!-- プレビューエリア -->
@@ -298,19 +298,6 @@
         });
     }
 
-    document.querySelector('form').addEventListener('submit', function (event) {
-        if (uploadedFiles.length === 0) {
-            alert('少なくとも1枚の画像をアップロードしてください。');
-            event.preventDefault(); // フォーム送信を中止
-        }
-    });
-
-    // document.querySelector('button[type="submit"]').addEventListener('click', function (event) {
-    //     if (uploadedFiles.length === 0) {
-    //         alert('少なくとも1枚の画像をアップロードしてください。');
-    //         event.preventDefault(); // フォーム送信を中止
-    //     }
-    // });
 
     function updateRemainingCount() {
         remainingCount.textContent = maxFiles - uploadedFiles.length;
