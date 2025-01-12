@@ -220,6 +220,25 @@
         console.log('Drop event triggered');
         handleFiles(e.dataTransfer.files);
     });
+
+    const additionalUploadContainer = document.getElementById('additional-upload-container');
+
+    // ドラッグアンドドロップ関連イベントの追加
+    additionalUploadContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        additionalUploadContainer.style.backgroundColor = '#e0f7fa'; // ドラッグ時の背景色を変更
+    });
+
+    additionalUploadContainer.addEventListener('dragleave', () => {
+        additionalUploadContainer.style.backgroundColor = ''; // 元の背景色に戻す
+    });
+
+    additionalUploadContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        additionalUploadContainer.style.backgroundColor = ''; // 背景色をリセット
+        handleFiles(e.dataTransfer.files); // ドロップしたファイルを処理
+    });
+
     
     // ファイル選択時の処理
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
