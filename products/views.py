@@ -24,6 +24,11 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     template_name = 'products/product_create.html'
 
     def form_valid(self, form):
+        '''
+        # デバッグ
+        print("POST data:", self.request.POST)  # POSTデータを出力
+        print("FILES data:", self.request.FILES)  # アップロードされたファイルを出力
+        '''
         # 商品の基本情報を保存
         self.object = form.save(commit=False)
         self.object.seller = self.request.user
@@ -33,8 +38,8 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         new_images = self.request.FILES.getlist('images')
 
         # 画像必須チェック
-        if not new_images:
-            form.add_error(None, "少なくとも1枚の画像をアップロードしてください。")
+        if not new_images and self.object.images.count() == 0:
+            form.add_error(None, "画像をアップロードしてください。")
             return self.form_invalid(form)
 
         # 並び順データを取得
@@ -110,6 +115,13 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
             return reverse('products:product_detail', kwargs={'pk': self.object.pk})
         return reverse('products:product_list')  # フォールバックとして商品一覧にリダイレクト
 
+    '''
+    # デバッグ
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        print("Context data:", context)  # デバッグ用にコンソールに出力
+        return context
+    '''
 
 
 class ProductEditView(LoginRequiredMixin, UpdateView):
@@ -127,6 +139,12 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         # フォームの基本情報を保存
         self.object = form.save()
+
+        # 新しい画像を取得
+        new_images = self.request.FILES.getlist('images')
+
+        # 既存の画像を取得
+        existing_images = self.object.images.all()
 
         # 画像必須チェック
         if not new_images and existing_images.count() == 0:

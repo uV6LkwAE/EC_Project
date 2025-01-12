@@ -5,12 +5,12 @@
 {% block title %}商品を出品{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5" style="max-width: 800px;">
     <h2 class="mb-4">商品を出品する</h2>
-    
+
     <!-- エラーメッセージの表示 -->
     {% if form.non_field_errors %}
-    <div class="alert alert-danger">
+    <div id="error-message" class="alert alert-danger">
         <ul>
             {% for error in form.non_field_errors %}
                 <li>{{ error }}</li>
@@ -21,35 +21,29 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="title">商品名:</label>
-            {{ form.title|add_class_products:"form-control" }}
-        </div>
-        <div class="form-group">
-            <label for="description">商品詳細:</label>
-            {{ form.description|add_class_products:"form-control" }}
-        </div>
-        <div class="form-group">
-            <label for="price">価格:</label>
-            {{ form.price|add_class_products:"form-control" }}
-        </div>
-        <div class="form-group">
-            <label for="category">カテゴリー:</label>
-            {{ form.category|add_class_products:"form-control" }}
-        </div>
-        <div class="form-group">
-            <label for="condition">状態:</label>
-            {{ form.condition|add_class_products:"form-control" }}
-        </div>
-        <div class="form-group">
-            <label for="images">商品画像:</label>
-            <input type="file" id="file-input" name="images" multiple class="form-control-file" required>
+
+        <!-- 画像アップロードエリアを商品名の上に移動 -->
+        <div id="drop-area" class="mt-4 mx-auto mb-3">
+            <i class="bi bi-cloud-upload display-5" style="opacity: 0.5;"></i>
+            <p>ドラッグ＆ドロップ<br>またはファイルを選択</p>
+            <button type="button" id="select-button" class="btn btn-secondary">ファイルを選択</button>
+            <small>10枚まで</small>
+            <input type="file" id="file-input" name="images" multiple accept="image/*" hidden>
         </div>
 
         <!-- プレビューエリア -->
-        <h5>プレビュー</h5>
-        <div id="image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px;">
-            <!-- プレビュー画像がここに表示されます -->
+        <div id="preview-area" class="hidden mt-4 mb-3">
+            <h5>プレビュー</h5>
+            <div id="image-preview" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                <!-- プレビュー画像がここに表示されます -->
+                <!-- 追加ファイル選択ボタン -->
+                <div class="image-container" id="additional-upload-container">
+                    <label for="additional-file-input" id="additional-upload">
+                        <span><i class="bi bi-cloud-plus display-5"></i><br>あと <span id="remaining-count">10</span> 枚まで<br>アップロードできます</span>
+                    </label>
+                    <input type="file" id="additional-file-input" name="images" multiple accept="image/*">
+                </div>
+            </div>
         </div>
 
         <!-- 隠しフィールド: 並び順データを保持 -->
@@ -58,92 +52,219 @@
         <!-- 隠しフィールド: 削除された画像のIDを保持 -->
         <input type="hidden" name="deleted_images" id="deleted-images">
 
+        <div class="form-group mb-3">
+            <label for="title">商品名:</label>
+            {{ form.title|add_class_products:"form-control" }}
+        </div>
+        <div class="form-group mb-3">
+            <label for="description">商品詳細:</label>
+            {{ form.description|add_class_products:"form-control" }}
+        </div>
+        <div class="form-group mb-3">
+            <label for="price">価格:</label>
+            {{ form.price|add_class_products:"form-control" }}
+        </div>
+        <div class="form-group mb-3">
+            <label for="category">カテゴリー:</label>
+            {{ form.category|add_class_products:"form-control" }}
+        </div>
+        <div class="form-group mb-2">
+            <label for="condition">状態:</label>
+            {{ form.condition|add_class_products:"form-control" }}
+        </div>
 
-        <button type="submit" class="btn btn-primary mt-3">出品する</button>
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary mt-3 mb-3">出品する</button>
+        </div>
+        
     </form>
 </div>
 
 <!-- CSS -->
 <style>
+    #drop-area {
+        width: 100%;
+        max-width: 600px;
+        padding: 20px;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        text-align: center;
+        background-color: #f9f9f9;
+        cursor: pointer;
+    }
+
+    #drop-area:hover {
+        background-color: #e0f7fa;
+    }
+
+    .preview-container {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+
     .image-container {
         position: relative;
-        display: inline-block;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
     }
 
     .image-container img {
         width: 100%;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        height: auto;
     }
 
     .delete-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: rgba(255, 255, 255, 0.9); /* 少し濃くして視認性を高める */
-    color: red;
-    border: none;
-    width: 32px; /* アイコンボタンの幅 */
-    height: 32px; /* アイコンボタンの高さ */
-    border-radius: 50%; /* 完全な円形にする */
-    font-size: 20px; /* アイコンサイズ */
-    display: flex; /* フレックスボックスで中央揃え */
-    align-items: center; /* 縦方向の中央揃え */
-    justify-content: center; /* 横方向の中央揃え */
-    cursor: pointer;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* ボタンに軽い影を付ける */
-    transition: background-color 0.2s; /* ホバー時のスムーズな変化 */
-}
-
-.delete-btn:hover {
-    background-color: rgba(255, 0, 0, 0.8); /* ホバー時の背景色 */
-    color: white; /* ホバー時のアイコン色 */
-}
-
-
-    .delete-btn i {
-        font-size: 1.2rem;
-    }
-
-    .image-container:hover .delete-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background-color: rgba(255, 255, 255, 0.9);
+        color: red;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        font-size: 16px;
+        cursor: pointer;
         display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     }
+
+    .delete-btn:hover {
+        background-color: rgba(255, 0, 0, 0.8);
+        color: white;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    #additional-upload {
+        width: 100%;
+        height: 100%;
+        border: 2px dashed #ccc;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        color: #aaa;
+        font-size: 14px;
+    }
+
+    #additional-upload-container {
+        width: 100%;
+        aspect-ratio: 1; /* 幅と高さを正方形にする */
+        border: none; /* 既に内側のlabelにborderがあるので不要 */
+    }
+
+
+    #additional-upload:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    #additional-file-input {
+        display: none; /* input要素は非表示 */
+    }
+
+    .sortable-ghost {
+        opacity: 0 !important;
+        visibility: visible !important;
+    }
+
+
+    /* .image-container.sortable-chosen img {
+        opacity: 1 !important;
+        visibility: visible !important;
+    } */
 </style>
 
 <!-- JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
+    const dropArea = document.getElementById('drop-area');
     const fileInput = document.getElementById('file-input');
+    const additionalFileInput = document.getElementById('additional-file-input');
+    const previewArea = document.getElementById('preview-area');
     const imagePreview = document.getElementById('image-preview');
+    const remainingCount = document.getElementById('remaining-count');
     const orderDataInput = document.getElementById('order-data');
     const deletedImagesInput = document.getElementById('deleted-images');
-    let deletedImages = []; // 削除された画像IDを追跡する配列
+    let maxFiles = 10;
+    let uploadedFiles = [];
+    let deletedImages = [];
+    let tempImageId = 1;
 
-    // 並び替え後の順序データを更新
-    let tempImageId = 1; // 新規画像用の一時IDカウンター
+    // ファイル選択ボタンのクリックイベント
+    document.getElementById('select-button').addEventListener('click', () => fileInput.click());
 
-    function updateOrderData() {
-        const orderData = [];
-        document.querySelectorAll('#image-preview > div').forEach((item, index) => {
-            const imageId = item.dataset.id || `temp-${tempImageId++}`; // 新規画像に一時IDを割り当て, 新規画像の場合、noneになってしまう
-            orderData.push({ id: imageId, order: index });
-        });
-        orderDataInput.value = JSON.stringify(orderData);
-    }
+    // ドラッグ＆ドロップ関連イベント
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.backgroundColor = '#e0f7fa';
+    });
 
-    // 新しい画像のプレビューと削除
-    fileInput.addEventListener('change', function (event) {
-        const files = event.target.files;
-        imagePreview.innerHTML = ''; // プレビューをクリア
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.style.backgroundColor = '#f9f9f9';
+    });
 
-        Array.from(files).forEach((file, index) => {
-            if (file.type.startsWith('image/')) {
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.style.backgroundColor = '#f9f9f9';
+        console.log('Drop event triggered');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    const additionalUploadContainer = document.getElementById('additional-upload-container');
+
+    // ドラッグアンドドロップ関連イベントの追加
+    additionalUploadContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        additionalUploadContainer.style.backgroundColor = '#e0f7fa'; // ドラッグ時の背景色を変更
+    });
+
+    additionalUploadContainer.addEventListener('dragleave', () => {
+        additionalUploadContainer.style.backgroundColor = ''; // 元の背景色に戻す
+    });
+
+    additionalUploadContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        additionalUploadContainer.style.backgroundColor = ''; // 背景色をリセット
+        handleFiles(e.dataTransfer.files); // ドロップしたファイルを処理
+    });
+
+    
+    // ファイル選択時の処理
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    additionalFileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+        console.log('handleFiles called with files:', files); // デバッグ用ログ
+
+        if (uploadedFiles.length >= maxFiles) {
+            alert('これ以上アップロードできません');
+            return;
+        }
+
+        Array.from(files).forEach((file) => {
+            if (uploadedFiles.length < maxFiles && file.type.startsWith('image/')) {
+                console.log('Processing file:', file.name); // デバッグ用ログ
+
                 const reader = new FileReader();
-                reader.onload = function (e) {
+                reader.onload = (e) => {
+                    console.log('FileReader onload called'); // デバッグ用ログ
+
                     const container = document.createElement('div');
                     container.classList.add('image-container');
-                    container.dataset.id = `temp-${tempImageId++}`; // 一時IDを割り当て
+                    container.dataset.id = `temp-${tempImageId++}`; // ここで data-id を設定
 
+                    console.log('Assigned data-id:', container.dataset.id); // デバッグログを追加
 
                     const img = document.createElement('img');
                     img.src = e.target.result;
@@ -152,63 +273,140 @@
                     deleteBtn.classList.add('delete-btn');
                     deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
 
-                    deleteBtn.addEventListener('click', function () {
-                        container.remove(); // フロントエンドで画像プレビューを削除
-                        updateOrderData(); // 並び順を更新
+                    deleteBtn.addEventListener('click', () => {
+                        // data-id 属性から imageId を取得
+                        const imageId = container.dataset.id;  
+
+                        // コンテナを削除（表面）
+                        container.remove();
+
+                        // ファイルリストから削除
+                        uploadedFiles = uploadedFiles.filter((f) => f !== file);
+
+                        // hidden input にセット
+                        if (imageId) {
+                            deletedImages.push(imageId);
+                            deletedImagesInput.value = JSON.stringify(deletedImages); 
+                        }
+
+                        // fileInput をクリアしてから再設定
+                        fileInput.value = '';  // 現在のファイル選択をクリア
+                        const dataTransfer = new DataTransfer();  // 新しい DataTransfer オブジェクトを作成
+
+                        uploadedFiles.forEach((f) => dataTransfer.items.add(f));  // uploadedFiles の内容を追加
+                        fileInput.files = dataTransfer.files;  // 新しい FileList を fileInput に設定
+
+                        // デバッグ用ログ
+                        console.log('Uploaded files after deletion:', uploadedFiles);
+                        console.log('Deleted images:', deletedImages);
+                        console.log('Files in fileInput:', fileInput.files);
+
+                        updateRemainingCount();
+                        checkIfNoFiles();
                     });
 
                     container.appendChild(img);
                     container.appendChild(deleteBtn);
-                    imagePreview.appendChild(container);
-                    updateOrderData();
+                    // imagePreview.appendChild(container);
+                    imagePreview.insertBefore(container, document.getElementById('additional-upload-container'));
+
+
+                    // 読み込み完了後にファイルをリストに追加
+                    uploadedFiles.push(file);
+                    updateRemainingCount();
+                    checkIfNoFiles();
+
+                    // プレビューエリアを表示（UIの更新をここで行う）
+                    previewArea.classList.remove('hidden');
+                    dropArea.classList.add('hidden');
                 };
+
                 reader.readAsDataURL(file);
             }
         });
-    });
+    }
 
-    // 既存画像の削除
-    imagePreview.addEventListener('click', function (event) {
-        const deleteButton = event.target.closest('.delete-btn');
-        if (deleteButton) {
-            const container = deleteButton.closest('.image-container');
-            const imageId = container.dataset.id; // 画像IDを取得
-            if (imageId) {
-                deletedImages.push(imageId); // 削除された画像IDを追跡
-                deletedImagesInput.value = JSON.stringify(deletedImages); // 隠しフィールドに反映
-            }
-            container.remove(); // フロントエンドで画像プレビューを削除
-            updateOrderData(); // 並び順を更新
+
+    function updateRemainingCount() {
+        remainingCount.textContent = maxFiles - uploadedFiles.length;
+        if (uploadedFiles.length === maxFiles) {
+            document.getElementById('additional-upload-container').classList.add('hidden');
+        } else {
+            document.getElementById('additional-upload-container').classList.remove('hidden');
         }
-    });
+    }
 
-    document.querySelector('form').addEventListener('submit', function (event) {
-        const files = fileInput.files;
-        if (files.length === 0) {
-            alert('少なくとも1枚の画像をアップロードしてください。');
-            event.preventDefault(); // フォーム送信を中止
+
+    function checkIfNoFiles() {
+        if (uploadedFiles.length === 0) {
+            previewArea.classList.add('hidden');
+            dropArea.classList.remove('hidden');
         }
-    });
+    }
 
-    // SortableJSでドラッグ＆ドロップを有効化
+    // new Sortable(imagePreview, {
+    //     animation: 150,
+    //     onEnd: updateOrderData,
+    //     fallback: true,
+    //     ghostClass: 'sortable-ghost',
+    //     filter: '#additional-upload-container', 
+    //     onMove: (evt) => {
+    //         return evt.related !== document.getElementById('additional-upload-container');
+    //     }
+    // });
+
     new Sortable(imagePreview, {
         animation: 150,
-        onEnd: updateOrderData // 並び順が変更されたときにデータを更新
-    });
+        onEnd: updateOrderData,
+        fallback: true,
+        filter: '#additional-upload-container',
+        onMove: (evt) => {
+            return evt.related !== document.getElementById('additional-upload-container');
+        },
 
-    // フォーム送信時に削除対象の画像を追跡
-    document.querySelector('form').addEventListener('submit', function (event) {
-        if (deletedImages.length > 0) {
-            deletedImagesInput.value = JSON.stringify(deletedImages);
+        setDragImage: function (draggedElement, dragImage, evt) {
+            if (!draggedElement) return; // draggedElement が undefined なら何もしない
+            const clonedElement = draggedElement.cloneNode(true);
+            clonedElement.style.opacity = '0';
+            clonedElement.style.position = 'absolute';
+            clonedElement.style.top = '-9999px';
+            clonedElement.style.left = '-9999px';
+            document.body.appendChild(clonedElement);
+            evt.dataTransfer.setDragImage(clonedElement, 0, 0);
+            // evt.dataTransfer.setDragImage(clonedElement, draggedElement.offsetWidth / 2, draggedElement.offsetHeight / 2);
+
+            // ドラッグ終了時にクローン要素を削除
+            setTimeout(() => {
+                document.body.removeChild(clonedElement);
+            }, 0);
+        },
+        onStart: function (evt) {
+            console.log('Drag start event:', evt);
+            if (evt.dragged) {
+                evt.dragged.style.opacity = '1';
+                evt.dragged.style.visibility = 'visible';
+            }
         }
     });
 
-    // フォーム送信時に削除対象の画像を追跡
+    function updateOrderData() {
+        const orderData = [];
+        document.querySelectorAll('#image-preview > div').forEach((item, index) => {
+            const imageId = item.dataset.id;
+            console.log('Item data-id:', imageId); // デバッグログ
+            if (imageId) {
+                orderData.push({ id: imageId, order: index }); // 正しい ID と順序を追加
+            }
+        });
+        orderDataInput.value = JSON.stringify(orderData);
+
+        // デバッグ用ログ
+        console.log('Updated order data:', orderData);
+    }
+
     document.querySelector('form').addEventListener('submit', function (event) {
-        console.log('Deleted Images:', deletedImages); // デバッグログ
-        if (deletedImages.length > 0) {
-            deletedImagesInput.value = JSON.stringify(deletedImages); // サーバーに送信
-        }
+        console.log('Files in fileInput before submit:', fileInput.files);
+        console.log('Uploaded files array before submit:', uploadedFiles);
     });
 
 </script>
