@@ -24,7 +24,7 @@
 
         <!-- 画像アップロードエリアを商品名の上に移動 -->
         <div id="drop-area" class="mt-4 mx-auto mb-3">
-            <i class="bi bi-upload display-5"></i>
+            <i class="bi bi-cloud-upload display-5" style="opacity: 0.5;"></i>
             <p>ドラッグ＆ドロップ<br>またはファイルを選択</p>
             <button type="button" id="select-button" class="btn btn-secondary">ファイルを選択</button>
             <small>10枚まで</small>
@@ -39,7 +39,7 @@
                 <!-- 追加ファイル選択ボタン -->
                 <div class="image-container" id="additional-upload-container">
                     <label for="additional-file-input" id="additional-upload">
-                        <span>＋<br>あと <span id="remaining-count">10</span> 枚まで<br>アップロードできます</span>
+                        <span><i class="bi bi-cloud-plus display-5"></i><br>あと <span id="remaining-count">10</span> 枚まで<br>アップロードできます</span>
                     </label>
                     <input type="file" id="additional-file-input" name="images" multiple accept="image/*">
                 </div>
