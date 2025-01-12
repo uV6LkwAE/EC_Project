@@ -142,6 +142,7 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
 
         # 新しい画像を取得
         new_images = self.request.FILES.getlist('images')
+        new_image_mapping = {f"temp-{i + 1}": image for i, image in enumerate(new_images)}
 
         # 既存の画像を取得
         existing_images = self.object.images.all()
@@ -159,7 +160,18 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
                 image_id = item.get('id')
                 order = item.get('order')
                 if image_id is not None and order is not None:
-                    ProductImage.objects.filter(id=image_id, product=self.object).update(order=order)
+                    if image_id.startswith('temp-'):
+                        # 仮IDの場合は新しい画像を保存
+                        image = new_image_mapping.get(image_id)
+                        if image:
+                            ProductImage.objects.create(
+                                product=self.object,
+                                image=image,
+                                order=order
+                            )
+                    else:
+                        # 既存画像の場合は順序を更新
+                        ProductImage.objects.filter(id=image_id, product=self.object).update(order=order)
             logger.debug(f"Order data processed successfully: {order_data}")
         except json.JSONDecodeError:
             logger.error(f"Invalid order data: {order_data}")
@@ -174,18 +186,13 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         except json.JSONDecodeError:
             logger.error(f"Invalid deleted images data: {deleted_images}")
 
-        # 新しい画像の保存
-        new_images = self.request.FILES.getlist('images')
-        existing_image_count = self.object.images.count()
-        total_images = existing_image_count + len(new_images)
-
         # 制約チェック
         error_messages = []
 
         # 1. 合計枚数チェック
+        total_images = self.object.images.count()
         if total_images > 10:  # 上限10枚
-            excess_count = total_images - 10
-            error_messages.append(f"画像は合計10枚までアップロード可能です（現在{existing_image_count}枚、新規{len(new_images)}枚、{excess_count}枚超過）。")
+            error_messages.append(f"画像は合計10枚までアップロード可能です（現在{total_images}枚）。")
 
         # 2. 各画像のサイズチェック
         for image in new_images:
@@ -195,19 +202,13 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         # エラーがあればテンプレートに表示
         if error_messages:
             for message in error_messages:
-                form.add_error(None, message)  # フォームにエラーメッセージを追加
+                form.add_error(None, message)
             return self.form_invalid(form)
 
-        # 新しい画像を保存
-        for image in new_images:
-            ProductImage.objects.create(
-                product=self.object,
-                image=image,
-                order=self.object.images.count()  # 最後に追加
-            )
         logger.debug(f"New images uploaded successfully: {[image.name for image in new_images]}")
 
         return super().form_valid(form)
+
 
     def get_success_url(self):
         return reverse('products:product_detail', kwargs={'pk': self.object.pk})
