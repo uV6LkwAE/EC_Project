@@ -262,6 +262,9 @@
 
                     const container = document.createElement('div');
                     container.classList.add('image-container');
+                    container.dataset.id = `temp-${tempImageId++}`; // ここで data-id を設定
+
+                    console.log('Assigned data-id:', container.dataset.id); // デバッグログを追加
 
                     const img = document.createElement('img');
                     img.src = e.target.result;
@@ -271,8 +274,33 @@
                     deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
 
                     deleteBtn.addEventListener('click', () => {
+                        // data-id 属性から imageId を取得
+                        const imageId = container.dataset.id;  
+
+                        // コンテナを削除（表面）
                         container.remove();
+
+                        // ファイルリストから削除
                         uploadedFiles = uploadedFiles.filter((f) => f !== file);
+
+                        // hidden input にセット
+                        if (imageId) {
+                            deletedImages.push(imageId);
+                            deletedImagesInput.value = JSON.stringify(deletedImages); 
+                        }
+
+                        // fileInput をクリアしてから再設定
+                        fileInput.value = '';  // 現在のファイル選択をクリア
+                        const dataTransfer = new DataTransfer();  // 新しい DataTransfer オブジェクトを作成
+
+                        uploadedFiles.forEach((f) => dataTransfer.items.add(f));  // uploadedFiles の内容を追加
+                        fileInput.files = dataTransfer.files;  // 新しい FileList を fileInput に設定
+
+                        // デバッグ用ログ
+                        console.log('Uploaded files after deletion:', uploadedFiles);
+                        console.log('Deleted images:', deletedImages);
+                        console.log('Files in fileInput:', fileInput.files);
+
                         updateRemainingCount();
                         checkIfNoFiles();
                     });
@@ -337,6 +365,7 @@
         },
 
         setDragImage: function (draggedElement, dragImage, evt) {
+            if (!draggedElement) return; // draggedElement が undefined なら何もしない
             const clonedElement = draggedElement.cloneNode(true);
             clonedElement.style.opacity = '0';
             clonedElement.style.position = 'absolute';
@@ -352,19 +381,33 @@
             }, 0);
         },
         onStart: function (evt) {
-            // 初回ドラッグ時の透明化対策
-            evt.dragged.style.opacity = '1';
-            evt.dragged.style.visibility = 'visible'; // visibilityも確実に表示
+            console.log('Drag start event:', evt);
+            if (evt.dragged) {
+                evt.dragged.style.opacity = '1';
+                evt.dragged.style.visibility = 'visible';
+            }
         }
     });
 
     function updateOrderData() {
         const orderData = [];
         document.querySelectorAll('#image-preview > div').forEach((item, index) => {
-            const imageId = item.dataset.id || `temp-${tempImageId++}`;
-            orderData.push({ id: imageId, order: index });
+            const imageId = item.dataset.id;
+            console.log('Item data-id:', imageId); // デバッグログ
+            if (imageId) {
+                orderData.push({ id: imageId, order: index }); // 正しい ID と順序を追加
+            }
         });
         orderDataInput.value = JSON.stringify(orderData);
+
+        // デバッグ用ログ
+        console.log('Updated order data:', orderData);
     }
+
+    document.querySelector('form').addEventListener('submit', function (event) {
+        console.log('Files in fileInput before submit:', fileInput.files);
+        console.log('Uploaded files array before submit:', uploadedFiles);
+    });
+
 </script>
 {% endblock %}
