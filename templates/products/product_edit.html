@@ -440,8 +440,13 @@
 
     new Sortable(imagePreview, {
         animation: 150,
-        onEnd: updateOrderData
+        onEnd: updateOrderData,
+        filter: '#additional-upload-container',  // 追加ファイル選択ボタンを除外
+        onMove: function (evt) {
+            return evt.related !== document.getElementById('additional-upload-container');  // ドラッグ移動を無効化
+        }
     });
+
 
     // 画像が正常に並び替えできる
     function updateOrderData() {
