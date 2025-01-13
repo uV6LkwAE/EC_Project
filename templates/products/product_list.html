@@ -213,6 +213,19 @@
         cursor: pointer;
     }
 
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; /* 親要素にぴったり合わせる */
+    }
+
+    .sold-image {
+        width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
+        height: 100%; /* 同じく高さも合わせる */
+    }
+
     /* カードにホバー効果を追加 */
     .card.hover-effect {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
