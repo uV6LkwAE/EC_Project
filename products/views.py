@@ -142,6 +142,12 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
 
         # 新しい画像を取得
         new_images = self.request.FILES.getlist('images')
+
+        print("New images received:", [image.name for image in new_images])
+
+        # デバッグ用: アップロードされたファイルの内容を出力
+        print("FILES data:", self.request.FILES)
+
         new_image_mapping = {f"temp-{i + 1}": image for i, image in enumerate(new_images)}
 
         # 既存の画像を取得
@@ -149,13 +155,22 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
 
         # 画像必須チェック
         if not new_images and existing_images.count() == 0:
-            form.add_error(None, "少なくとも1枚の画像をアップロードしてください。")
+            form.add_error(None, "画像をアップロードしてください。")
             return self.form_invalid(form)
 
         # 並び替えデータの処理
         order_data = self.request.POST.get('order_data', '[]')
         try:
             order_data = json.loads(order_data)
+            if not order_data:
+                # 並び替えが行われていない場合、新規画像をそのまま保存
+                for idx, image in enumerate(new_images):
+                    print(f"Saving new image: {image.name} at order {existing_images.count() + idx}")  # デバッグ用
+                    ProductImage.objects.create(
+                        product=self.object,
+                        image=image,
+                        order=existing_images.count() + idx
+                    )
             for item in order_data:
                 image_id = item.get('id')
                 order = item.get('order')
@@ -175,6 +190,11 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
             logger.debug(f"Order data processed successfully: {order_data}")
         except json.JSONDecodeError:
             logger.error(f"Invalid order data: {order_data}")
+
+        print("Final order of images:")
+        for img in ProductImage.objects.filter(product=self.object).order_by('order'):
+            print(f"Image ID: {img.id}, Order: {img.order}")
+
 
         # 削除された画像の処理
         deleted_images = self.request.POST.get('deleted_images', '[]')
