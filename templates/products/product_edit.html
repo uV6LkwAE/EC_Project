@@ -18,7 +18,7 @@
     </div>
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
+    <form id="edit-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- 画像アップロードエリア -->
@@ -218,6 +218,9 @@
 
     // 新規・既存画像の管理とプレビュー表示
     function handleFiles(files) {
+        console.log('handleFiles called with files:', files); // デバッグ用ログ
+        console.log('Uploaded files before adding:', uploadedFiles); // 追加
+
         Array.from(files).forEach((file) => {
             if (uploadedFiles.length < maxFiles && file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -237,7 +240,7 @@
                     deleteBtn.addEventListener('click', (event) => {
                         event.preventDefault();  // フォーム送信を防ぐ
                         event.stopPropagation(); // イベントのバブリングを防ぐ
-                        console.log('削除ボタンがクリックされました');
+                        console.log('削除ボタンがクリックされました');console.log('DataTransfer items:', dataTransfer.items);
                         const imageId = container.dataset.id;
                         console.log('削除対象の画像ID:', imageId);  // 画像IDを出力
                         
@@ -266,11 +269,142 @@
                     uploadedFiles.push(file);
                     updateRemainingCount();
                     checkIfNoFiles();
+                    updateOrderData(); // ★新規画像追加後に順序データを更新
                 };
                 reader.readAsDataURL(file);
             }
         });
+
+        // // ★ここからデバッグログを追加
+        // const dataTransfer = new DataTransfer();
+        // uploadedFiles.forEach(file => {
+        //     console.log('Adding file to DataTransfer:', file); // デバッグログ
+        //     dataTransfer.items.add(file);
+        // });
+        // console.log('DataTransfer items:', dataTransfer.items); // デバッグログ
+
+        // fileInput.value = ''; // 既存の値をリセット
+        // fileInput.files = dataTransfer.files; // 新しいファイルリストを設定
+        // console.log('Updated fileInput after setting DataTransfer:', fileInput.files); // 確認用ログ
+        // console.log('fileInput.files length:', fileInput.files.length); // 確認用ログ
+
+
+
+
+        // const dataTransfer = new DataTransfer();
+        // uploadedFiles.forEach(file => {
+        //     console.log('Adding file to DataTransfer:', file); // デバッグログ
+        //     dataTransfer.items.add(file);
+        // });
+        // fileInput.files = dataTransfer.files; // 新しいファイルリストを設定
+        // console.log('Updated fileInput after setting DataTransfer:', fileInput.files); // 確認用ログ
+        // console.log('fileInput.files length:', fileInput.files.length); // 確認用ログ
+
+
+        const dataTransfer = new DataTransfer();
+        uploadedFiles.forEach(file => {
+            if (file.size > 0) {  // 空ファイルを除外
+                console.log('Adding valid file to DataTransfer:', file); // デバッグログ
+                dataTransfer.items.add(file);
+            } else {
+                console.log('Skipping empty file:', file); // デバッグログ（空ファイルの除外を確認）
+            }
+        });
+        fileInput.files = dataTransfer.files; // 新しいファイルリストを設定
+        console.log('Updated fileInput after setting DataTransfer:', fileInput.files); // 確認用ログ
+        console.log('fileInput.files length:', fileInput.files.length); // 確認用ログ
+
     }
+
+    const form = document.querySelector('form');
+    console.log('Form element:', form);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('#edit-form');
+        console.log('Form element:', form); // 正しいフォームが出力されるはずです
+
+        form.addEventListener('submit', function (event) {
+            console.log('Files in fileInput:', fileInput.files);  // 追加
+            console.log('Uploaded files array:', uploadedFiles);  // 追加
+            console.log(fileInput); // fileInput の内容を確認
+        });
+    });
+
+    // document.addEventListener('DOMContentLoaded', () => {
+    //     const form = document.querySelector('#edit-form'); // #edit-formを取得
+    //     console.log('Form element:', form); // 確認用ログ
+
+    //     form.addEventListener('submit', function (event) {
+    //         event.preventDefault(); // デフォルトのフォーム送信を防ぐ
+
+    //         const formData = new FormData(form); // フォームデータを作成
+
+    //         // uploadedFiles に含まれるファイルを FormData に追加
+    //         uploadedFiles.forEach((file) => {
+    //             formData.append('images', file);
+    //         });
+
+    //         console.log('FormData with files:', formData.getAll('images')); // 確認用ログ
+
+    //         // カスタムでフォームを送信
+    //         fetch(form.action, {
+    //             method: 'POST',
+    //             body: formData
+    //         })
+    //         .then(response => {
+    //             if (response.ok) {
+    //                 console.log('Form submitted successfully');
+    //                 // 成功時の処理（例: 商品詳細ページへのリダイレクト）
+    //                 window.location.href = response.url;
+    //             } else {
+    //                 console.error('Form submission failed');
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error during form submission:', error);
+    //         });
+    //     });
+    // });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('#edit-form');
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // デフォルトのフォーム送信を防ぐ
+
+            const formData = new FormData(form); // フォームデータを作成
+
+            // uploadedFiles に含まれるファイルを FormData に追加
+            uploadedFiles.forEach((file) => {
+                formData.append('images', file);
+            });
+
+            console.log('FormData with files:', formData.getAll('images')); // 確認用ログ
+
+            // カスタムでフォームを送信
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Form submitted successfully');
+                    // 成功時の処理（例: 商品詳細ページへのリダイレクト）
+                    window.location.href = response.url;
+                } else {
+                    console.error('Form submission failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error during form submission:', error);
+            });
+
+            alert("submitされました。");
+        });
+    });
+
+
+
 
     // 合計画像枚数を取得する共通関数
     function getTotalImagesCount() {
@@ -367,9 +501,6 @@
     });
 
 
-    document.querySelector('form').addEventListener('submit', (event) => {
-        console.log('フォームが送信されました');
-    });
 
     document.addEventListener('DOMContentLoaded', () => {
         const deleteButtons = document.querySelectorAll('.delete-btn');
