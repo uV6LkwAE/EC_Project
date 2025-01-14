@@ -109,6 +109,15 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         logger.debug(f"Mapped temp IDs to DB IDs: {temp_id_to_image}")
 
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        print("Form invalid called")
+        print("Form errors:", form.errors)  # デバッグ用
+        context = self.get_context_data(form=form)
+        print("Context data:", context)  # デバッグ用
+        print("Form errors (as data):", form.errors.as_data())
+
+        return self.render_to_response(context)
 
     def get_success_url(self):
         if self.object:
@@ -123,7 +132,6 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         return context
     '''
 
-
 class ProductEditView(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
@@ -137,25 +145,31 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # フォームの基本情報を保存
-        self.object = form.save()
-
         # 新しい画像を取得
         new_images = self.request.FILES.getlist('images')
-
-        print("New images received:", [image.name for image in new_images])
-
-        # デバッグ用: アップロードされたファイルの内容を出力
-        print("FILES data:", self.request.FILES)
-
-        new_image_mapping = {f"temp-{i + 1}": image for i, image in enumerate(new_images)}
-
-        # 既存の画像を取得
         existing_images = self.object.images.all()
 
-        # 画像必須チェック
+        # 制約チェック
+        error_messages = []
+
+        # 1. 画像必須チェック
         if not new_images and existing_images.count() == 0:
             form.add_error(None, "画像をアップロードしてください。")
+            print("画像エラーが追加されました。")
+
+        # 2. 合計枚数チェック（新規 + 既存）
+        total_images_count = len(new_images) + existing_images.count()
+        if total_images_count > 10:  # 上限10枚
+            form.add_error(None, f"画像は合計10枚までアップロード可能です（現在{total_images_count}枚選択されています）。")
+
+        # 3. 各画像のサイズチェック
+        for image in new_images:
+            if image.size > 10 * 1024 * 1024:  # 10MB制限
+                form.add_error(None, f"画像「{image.name}」のサイズが10MBを超えています。")
+
+        # エラーがあればテンプレートに表示
+        if form.errors:
+            print("Form errors:", form.errors)  # デバッグ用ログ
             return self.form_invalid(form)
 
         # 並び替えデータの処理
@@ -177,13 +191,12 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
                 if image_id is not None and order is not None:
                     if image_id.startswith('temp-'):
                         # 仮IDの場合は新しい画像を保存
-                        image = new_image_mapping.get(image_id)
-                        if image:
-                            ProductImage.objects.create(
-                                product=self.object,
-                                image=image,
-                                order=order
-                            )
+                        image = new_images.pop(0)
+                        ProductImage.objects.create(
+                            product=self.object,
+                            image=image,
+                            order=order
+                        )
                     else:
                         # 既存画像の場合は順序を更新
                         ProductImage.objects.filter(id=image_id, product=self.object).update(order=order)
@@ -195,7 +208,6 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         for img in ProductImage.objects.filter(product=self.object).order_by('order'):
             print(f"Image ID: {img.id}, Order: {img.order}")
 
-
         # 削除された画像の処理
         deleted_images = self.request.POST.get('deleted_images', '[]')
         try:
@@ -206,32 +218,23 @@ class ProductEditView(LoginRequiredMixin, UpdateView):
         except json.JSONDecodeError:
             logger.error(f"Invalid deleted images data: {deleted_images}")
 
-        # 制約チェック
-        error_messages = []
-
-        # 1. 合計枚数チェック
-        total_images = self.object.images.count()
-        if total_images > 10:  # 上限10枚
-            error_messages.append(f"画像は合計10枚までアップロード可能です（現在{total_images}枚）。")
-
-        # 2. 各画像のサイズチェック
-        for image in new_images:
-            if image.size > 10 * 1024 * 1024:  # 10MB制限
-                error_messages.append(f"画像「{image.name}」のサイズが10MBを超えています。")
-
-        # エラーがあればテンプレートに表示
-        if error_messages:
-            for message in error_messages:
-                form.add_error(None, message)
-            return self.form_invalid(form)
-
         logger.debug(f"New images uploaded successfully: {[image.name for image in new_images]}")
 
         return super().form_valid(form)
 
-
     def get_success_url(self):
         return reverse('products:product_detail', kwargs={'pk': self.object.pk})
+
+    def form_invalid(self, form):
+        print("Form invalid called")
+        print("Form errors:", form.errors)  # デバッグ用
+        context = self.get_context_data(form=form)
+        print("Context data:", context)  # デバッグ用
+        print("Form errors (as data):", form.errors.as_data())
+
+        return self.render_to_response(context)
+
+
 
 
 # class ProductListView(ListView):

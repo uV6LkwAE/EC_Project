@@ -7,6 +7,7 @@
 <div class="container mt-5" style="max-width: 800px;">
     <h2 class="mb-4">商品を編集する</h2>
 
+    <!-- 一応残しておく -->
     <!-- エラーメッセージの表示 -->
     {% if form.non_field_errors %}
     <div id="error-message" class="alert alert-danger">
@@ -17,6 +18,11 @@
         </ul>
     </div>
     {% endif %}
+
+    <!-- テンプレート側でバリデーションチェックを行い、エラーを表示 -->
+     <!-- バックエンドでもチェックされるが、バックエンドからエラーメッセージは配信されない -->
+    <!-- viewのform.non_field_errorsは、event.preventDefault()の影響で受け取れない -->
+    <div id="error-message" class="hidden"></div>
 
     <form id="edit-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -238,7 +244,7 @@
                     deleteBtn.type = 'button';
 
                     deleteBtn.addEventListener('click', (event) => {
-                        event.preventDefault();  // フォーム送信を防ぐ
+                        // event.preventDefault();  // フォーム送信を防ぐ
                         event.stopPropagation(); // イベントのバブリングを防ぐ
                         console.log('削除ボタンがクリックされました');console.log('DataTransfer items:', dataTransfer.items);
                         const imageId = container.dataset.id;
@@ -366,45 +372,6 @@
     //     });
     // });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.querySelector('#edit-form');
-
-        form.addEventListener('submit', function (event) {
-            event.preventDefault(); // デフォルトのフォーム送信を防ぐ
-
-            const formData = new FormData(form); // フォームデータを作成
-
-            // uploadedFiles に含まれるファイルを FormData に追加
-            uploadedFiles.forEach((file) => {
-                formData.append('images', file);
-            });
-
-            console.log('FormData with files:', formData.getAll('images')); // 確認用ログ
-
-            // カスタムでフォームを送信
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Form submitted successfully');
-                    // 成功時の処理（例: 商品詳細ページへのリダイレクト）
-                    window.location.href = response.url;
-                } else {
-                    console.error('Form submission failed');
-                }
-            })
-            .catch(error => {
-                console.error('Error during form submission:', error);
-            });
-
-            alert("submitされました。");
-        });
-    });
-
-
-
 
     // 合計画像枚数を取得する共通関数
     function getTotalImagesCount() {
@@ -416,6 +383,9 @@
 
         // デバッグ用: totalImagesCount を出力
         console.log('Total images count:', totalImagesCount);
+        if (totalImagesCount === 0) {
+                console.log("NG");
+            }
 
         if (totalImagesCount === 0) {
             dropArea.classList.remove('hidden');   // 画像が0枚の場合はアップロードエリアを表示
@@ -481,7 +451,7 @@
         const existingDeleteButtons = document.querySelectorAll('.image-container[data-id] .delete-btn');
         existingDeleteButtons.forEach((deleteBtn) => {
             deleteBtn.addEventListener('click', (event) => {
-                event.preventDefault();
+                // event.preventDefault();
                 event.stopPropagation();
                 console.log('既存画像の削除ボタンがクリックされました');
                 
@@ -511,5 +481,127 @@
         const deleteButtons = document.querySelectorAll('.delete-btn');
         console.log('削除ボタンの数:', deleteButtons.length);
     });
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('#edit-form');
+        const errorMessageContainer = document.getElementById('error-message');
+        const maxFiles = 10;
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
+        const fileInput = document.getElementById('file-input'); // ファイル入力フィールド
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // デフォルトのフォーム送信を防ぐ
+
+            // エラーメッセージを初期化
+            errorMessageContainer.innerHTML = '';
+            errorMessageContainer.classList.add('hidden');
+
+            let valid = true; // フォーム送信のフラグ
+            let errors = [];  // エラーメッセージを格納する配列
+
+            // 1. 画像の総枚数を取得
+            const totalImagesCount = existingImagesCount + uploadedFiles.length;
+            console.log('Total images count on submit:', totalImagesCount);
+
+            // 2. 画像が 0 枚の場合のチェック
+            if (totalImagesCount === 0) {
+                console.log("画像がありません")
+                errors.push('少なくとも 1 枚の画像をアップロードしてください。');
+                valid = false;
+            }
+
+            // 3. 枚数チェック
+            if (totalImagesCount > maxFiles) {
+                errors.push(`画像は最大 ${maxFiles} 枚までアップロード可能です。現在 ${totalImagesCount} 枚選択されています。`);
+                valid = false;
+            }
+
+            // 4. サイズチェック
+            Array.from(fileInput.files).forEach(file => {
+                uploadedFiles
+                if (file.size > maxFileSize) {
+                    console.log("サイズオーバーです")
+                    errors.push(`画像「${file.name}」のサイズが 10MB を超えています。`);
+                    valid = false;
+                }
+            });
+
+            uploadedFiles.forEach(file => {
+                if (file.size > maxFileSize) {
+                    console.log("サイズオーバーです (uploadedFiles)");
+                    errors.push(`画像「${file.name}」のサイズが 10MB を超えています。`);
+                    valid = false;
+                }
+            });
+
+            console.log(errors);
+            // alert("サイズチェックが終わりました。")
+
+            // alert("エラーチェックが終了しました")
+
+            // エラーがある場合は表示して送信を中止
+            if (!valid) {
+                errorMessageContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <ul>
+                            ${errors.map(error => `<li>${error}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                errorMessageContainer.classList.remove('hidden');
+
+                // ページの一番上までスクロール
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth' // スムーズにスクロール
+                });
+                
+                return; // 送信を中止
+            }
+
+            // エラーがなければフォームを送信
+            const formData = new FormData(form); // フォームデータを作成
+
+            // file-input からファイルを追加
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('images', file);
+            });
+
+            // uploadedFiles に含まれるファイルを FormData に追加
+            uploadedFiles.forEach((file) => {
+                formData.append('images', file);
+            });
+
+            console.log('FormData with files:', formData.getAll('images')); // 確認用ログ
+
+            // カスタムでフォームを送信
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.text().then(html => ({ html, response })))
+            .then(({ html, response }) => {
+                if (response.ok) {
+                    console.log('Form submitted successfully');
+                    window.location.href = response.url;
+                } else {
+                    console.error('Form submission failed');
+                    document.open();
+                    document.write(html);
+                    document.close();
+                }
+            })
+            .catch(error => {
+                console.error('Error during form submission:', error);
+            });
+        });
+    });
+
+
+
 </script>
 {% endblock %}
