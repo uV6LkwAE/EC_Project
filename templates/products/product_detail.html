@@ -71,13 +71,6 @@
 
         var commentsDisabled = "{{ comments_disabled|yesno:'true,false' }}"; // 'true' or 'false'として埋め込む
 
-        // if (commentsDisabled === 'true') {
-        //     // コメント投稿用のplaceholderを変更
-        //     document.getElementById('comment-textarea').placeholder = "売り切れのため、コメントできません";
-        //     // 返信用のplaceholderを変更
-        //     document.getElementById('reply-textarea').placeholder = "売り切れのため、返信できません";
-        // }
-
         if (commentsDisabled === 'true') {
             // コメントが存在し、売り切れの場合
             const commentsContainer = document.getElementById('comments');  // コメントの親要素
@@ -92,45 +85,27 @@
         }
 
         // メインスライダー
-        // const main = new Splide(".splide-main", {
-        //     type: "fade",
-        //     rewind: true,
-        //     pagination: false,
-        //     arrows: true,
-        // });
+        const main = new Splide(".splide-main", {
+            type: "fade",  // フェードスライダー
+            rewind: true,  // 最後に到達したら先頭に戻る
+            pagination: false, // ページネーションを非表示
+            arrows: true, // 矢印を非表示
+        });
 
-        // サムネイル
-        // const thumbnails = new Splide(".thumbnail-carousel", {
-        //     type: "loop",
-        //     perPage: 3,
-        //     pagination: false,
-        //     isNavigation: true,
-        //     focus: "center",
-        //     arrows: false,
-        // });
-
-            // メインスライダー
-            const main = new Splide(".splide-main", {
-                type: "fade",  // フェードスライダー
-                rewind: true,  // 最後に到達したら先頭に戻る
-                pagination: false, // ページネーションを非表示
-                arrows: true, // 矢印を非表示
-            });
-
-            // サムネイルスライダー
-            const thumbnails = new Splide(".thumbnail-carousel", {
-                fixedWidth: 120, // サムネイルの幅
-                type: "loop", // ループする
-                perPage: 5, // 最大表示数を5に設定
-                pagination: false, // ページネーションを非表示
-                isNavigation: true, // 他のスライダーとして動作
-                focus: "center", // 中央に配置
-                breakpoints: {
-                    600: { // 幅が600px以下の場合の設定
-                        fixedWidth: 80,  // サムネイルの幅を調整
-                    },
+        // サムネイルスライダー
+        const thumbnails = new Splide(".thumbnail-carousel", {
+            fixedWidth: 120, // サムネイルの幅
+            type: "loop", // ループする
+            perPage: 5, // 最大表示数を5に設定
+            pagination: false, // ページネーションを非表示
+            isNavigation: true, // 他のスライダーとして動作
+            focus: "center", // 中央に配置
+            breakpoints: {
+                600: { // 幅が600px以下の場合の設定
+                    fixedWidth: 80,  // サムネイルの幅を調整
                 },
-            });
+            },
+        });
 
         // main と thumbnails の同期
         main.sync(thumbnails);
@@ -403,21 +378,6 @@
 
                             <!-- 返信フォーム -->
                             <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display:none; margin-top: 10px;">
-
-                                <!-- <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="reply_to" value="{{ comment.id }}">
-                                    <div class="input-group">
-                                        <textarea class="form-control" name="content" placeholder="
-                                            {% if product.status == 'sold_out' and comment.replies.all.count == 0 %}
-                                                売り切れのため、返信できません
-                                            {% elif product.status == 'available' and comment.replies.all.count == 0 %}
-                                                返信を入力してください
-                                            {% endif %}" id="reply-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
-                                        <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
-                                    </div>
-                                </form> -->
-
                                 <form method="POST" action="{% url 'products:product_detail' pk=product.id %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="reply_to" value="{{ comment.id }}">
@@ -438,7 +398,6 @@
                                         <textarea class="form-control" name="content" placeholder="{% if product.status == 'sold_out' and comment.replies.all.count == 0 %}売り切れのため、返信できません{% elif product.status == 'available' and comment.replies.all.count == 0 %}返信を入力してください{% else %}返信できます{% endif %}" id="reply-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
                                         <button type="submit" class="btn btn-primary input-group-append" {% if comments_disabled %}disabled{% endif %}>返信する</button>
                                     </div>
-                                    
                                 </form>
                             </div>
                         </div>
