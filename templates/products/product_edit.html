@@ -336,43 +336,6 @@
         });
     });
 
-    // document.addEventListener('DOMContentLoaded', () => {
-    //     const form = document.querySelector('#edit-form'); // #edit-formを取得
-    //     console.log('Form element:', form); // 確認用ログ
-
-    //     form.addEventListener('submit', function (event) {
-    //         event.preventDefault(); // デフォルトのフォーム送信を防ぐ
-
-    //         const formData = new FormData(form); // フォームデータを作成
-
-    //         // uploadedFiles に含まれるファイルを FormData に追加
-    //         uploadedFiles.forEach((file) => {
-    //             formData.append('images', file);
-    //         });
-
-    //         console.log('FormData with files:', formData.getAll('images')); // 確認用ログ
-
-    //         // カスタムでフォームを送信
-    //         fetch(form.action, {
-    //             method: 'POST',
-    //             body: formData
-    //         })
-    //         .then(response => {
-    //             if (response.ok) {
-    //                 console.log('Form submitted successfully');
-    //                 // 成功時の処理（例: 商品詳細ページへのリダイレクト）
-    //                 window.location.href = response.url;
-    //             } else {
-    //                 console.error('Form submission failed');
-    //             }
-    //         })
-    //         .catch(error => {
-    //             console.error('Error during form submission:', error);
-    //         });
-    //     });
-    // });
-
-
     // 合計画像枚数を取得する共通関数
     function getTotalImagesCount() {
         return existingImagesCount + uploadedFiles.length;
@@ -428,19 +391,6 @@
         });
         orderDataInput.value = JSON.stringify(orderData);
     }
-
-    // function updateOrderData() {
-    //     const orderData = [];
-    //     document.querySelectorAll('#image-preview > div').forEach((item, index) => {
-    //         const imageId = item.dataset.id;
-    //         if (!imageId.startsWith('temp-')) {  // temp- で始まるIDを除外
-    //             orderData.push({ id: imageId, order: index });
-    //         }
-    //     });
-    //     orderDataInput.value = JSON.stringify(orderData);
-    // }
-
-
 
     document.addEventListener('DOMContentLoaded', () => {
         checkIfNoFiles();
