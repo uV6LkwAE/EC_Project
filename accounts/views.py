@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin  # ユーザーがロ�
 from django.contrib.auth.views import LoginView, LogoutView  # Django標準のログインビューをインポート
 from .forms import SignupForm, CustomLoginForm, ProfileEditForm  # カスタムログインフォームをインポート
 from .models import CustomUser
+from .models import Follow
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -88,6 +89,17 @@ class ProfileView(TemplateView):
         user_id = kwargs.get('user_id')
         user = get_object_or_404(CustomUser, pk=user_id)
         context['user'] = user
+
+        # 現在のリクエストユーザーをテンプレートに渡す
+        context['request'] = self.request
+
+        # フォロー状態を判定
+        profile_user = get_object_or_404(CustomUser, pk=user_id)
+        context['profile_user'] = profile_user
+
+        # フォロー状態を判定
+        is_following = Follow.objects.filter(follower=self.request.user, followed=profile_user).exists()
+        context['is_following'] = is_following
         
         # 出品中の商品をフィルタリング
         products = Product.objects.filter(seller=user)
@@ -202,3 +214,39 @@ def trading_items(request):
         for t in transactions
     ]
     return JsonResponse({'trading_items': data})
+
+# フォローリストビュー
+@login_required
+def follow_list(request):
+    follows = Follow.objects.filter(follower=request.user)
+    data = [
+        {
+            'id': follow.followed.id,
+            'username': follow.followed.username,
+            'icon': follow.followed.icon.url if follow.followed.icon else None,
+            'is_following': True,
+        }
+        for follow in follows
+    ]
+    return JsonResponse({'follow_list': data})
+
+
+# フォロー処理
+@login_required
+def toggle_follow(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        followed_user = get_object_or_404(CustomUser, id=user_id)
+
+        if request.user == followed_user:
+            return JsonResponse({'error': '自分自身をフォローすることはできません'}, status=400)
+
+        follow_instance, created = Follow.objects.get_or_create(follower=request.user, followed=followed_user)
+
+        if not created:  # 既にフォローしていた場合は解除する
+            follow_instance.delete()
+            return JsonResponse({'status': 'unfollowed'})
+
+        return JsonResponse({'status': 'followed'})
+
+    return JsonResponse({'error': '無効なリクエスト'}, status=400)

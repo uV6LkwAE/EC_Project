@@ -1,7 +1,7 @@
 
 from django.urls import path
 from django.contrib.auth.views import LogoutView # LogoutViewのみ標準を使用
-from .views import SignupView, CustomLoginView, CustomLogoutView, MypageView, MypageEditView, ProfileView, AccountDeleteView
+from .views import SignupView, CustomLoginView, CustomLogoutView, MypageView, MypageEditView, ProfileView, AccountDeleteView, toggle_follow, follow_list
 from .import views
 
 app_name = 'accounts'
@@ -17,4 +17,6 @@ urlpatterns = [
     path('purchased-items/', views.purchased_items, name='purchased_items'),
     path('sold-items/', views.sold_items, name='sold_items'),
     path('trading-items/', views.trading_items, name='trading_items'),
+    path('follow-list/', views.follow_list, name='follow_list'),
+    path('toggle-follow/', views.toggle_follow, name='toggle_follow'),
 ]
