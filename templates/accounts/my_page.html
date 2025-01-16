@@ -240,9 +240,11 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
                         <div class="col">
                             <div class="card hover-effect card shadow-sm h-100" style="min-height: 300px;">
                                 <div class="card-body text-center d-flex flex-column justify-content-between">
-                                    ${user.icon ? 
-                                        `<img src="${user.icon}" alt="${user.username}" class="img-fluid rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">`
-                                        : `<i class="bi bi-person-circle" style="font-size: 100px; color: #6c757d;"></i>`}
+                                    <div class="text-center">
+                                        ${user.icon ? 
+                                            `<img src="${user.icon}" alt="${user.username}" class="img-fluid rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">`
+                                            : `<i class="bi bi-person-circle" style="font-size: 100px; color: #6c757d;"></i>`}
+                                    </div>
                                     <h5 class="card-title">
                                         <a href="/accounts/profile/${user.id}/" class="text-decoration-none text-dark">
                                             ${user.username}
