@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
 from .models import Product, ProductImage, Favorite, Comment
+from accounts.models import Follow
 from .forms import ProductForm
 from django import forms
 from django.utils import timezone
@@ -267,6 +268,7 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        profile_user = self.object.seller
         product = self.get_object()  # 現在表示されている商品を取得
         self.object = product
         print(f"Product in context: {product}")  # デバッグログ
@@ -320,6 +322,20 @@ class ProductDetailView(DetailView):
         context['is_favorited'] = is_favorited 
         context['time_display'] = time_display
         context['comments_disabled'] = context.get('comments_disabled', False)
+
+        # 出品者をprofile_userとして渡す
+        context['profile_user'] = self.object.seller  
+
+        # ユーザーが認証されているか確認
+        if self.request.user.is_authenticated:
+            # フォロー状態を確認
+            is_following = Follow.objects.filter(
+                follower=self.request.user, followed=profile_user
+            ).exists()
+            context['is_following'] = is_following
+        else:
+            # 未認証の場合はフォロー情報を渡さない
+            context['is_following'] = False
 
         return context
 

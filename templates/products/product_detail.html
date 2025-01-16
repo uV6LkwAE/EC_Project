@@ -9,6 +9,46 @@
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@3.6.3/dist/js/splide.min.js"></script>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const followForm = document.getElementById('follow-form');
+        const followBtn = document.getElementById('follow-btn');
+        const followIcon = document.getElementById('follow-icon');
+        const followText = document.getElementById('follow-text');
+
+        followForm.addEventListener('submit', function (event) {
+            event.preventDefault();  // フォームのデフォルト送信を防ぐ
+
+            const formData = new FormData(followForm);
+
+            fetch(followForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'followed') {
+                    // フォロー中の状態に更新
+                    followBtn.style.backgroundColor = '#E7F3FF';
+                    followBtn.style.color = '#007BFF';
+                    followIcon.className = 'bi bi-person-check';
+                    followText.textContent = 'フォロー中';
+                } else if (data.status === 'unfollowed') {
+                    // フォロー解除の状態に更新
+                    followBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                    followBtn.style.color = '#000000';
+                    followIcon.className = 'bi bi-person-add';
+                    followText.textContent = 'フォロー';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+
 
     document.addEventListener('DOMContentLoaded', function() {
         // ツールチップの初期化
@@ -304,24 +344,48 @@
             <h4 class="mt-3" style="opacity: 0.6; margin-bottom: 1rem;">出品者の情報</h4>
             <div class="d-flex align-items-center">
                 <!-- 出品者アイコン -->
-                <div class="me-3" style="margin-right: 1rem;">
+                <div class="me-3">
                     {% if product.seller.icon %}
-                        <img src="{{ product.seller.icon.url }}" alt="{{ product.seller.username }}のアイコン" class="img-fluid rounded-circle" style="width: 4.5vw; height: 4.5vw; object-fit: cover; border-radius: 50%;" />
+                        <img src="{{ product.seller.icon.url }}" alt="{{ product.seller.username }}のアイコン" 
+                            class="img-fluid rounded-circle" style="width: 64px; height: 64px;" />
                     {% else %}
-                        <i class="bi bi-person-circle" style="width: 4.5vw; height: 4.5vw; object-fit: cover; border-radius: 50%; font-size: 4.5vw; color: #6c757d;"></i>
+                        <i class="bi bi-person-circle text-secondary" style="font-size: 64px;"></i>
                     {% endif %}
                 </div>
 
-                <!-- 出品者の名前（リンク付き） -->
+                <!-- 出品者の名前とレーティング -->
                 <div style="margin-left: 0.5rem;">
                     <p class="m-0">
                         <a href="{% url 'accounts:user_profile' user_id=product.seller.id %}" class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">
                             <strong>{{ product.seller.username }}</strong>
                         </a>
                     </p>
+                    <!-- レーティング（仮の星5つ） -->
+                    <div class="mt-1">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                    </div>
                 </div>
+
+                <!-- フォローボタン -->
+                {% if user.is_authenticated %}
+                    {% if profile_user != request.user %}
+                        <form method="post" id="follow-form" action="{% url 'accounts:toggle_follow' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_id" value="{{ profile_user.id }}">
+                            <button type="submit" id="follow-btn" class="btn ms-3" 
+                                    style="background-color: {% if is_following %}#E7F3FF{% else %}rgba(0, 0, 0, 0.08){% endif %}; 
+                                        color: {% if is_following %}#007BFF{% else %}#000000{% endif %};">
+                                <i id="follow-icon" class="bi {% if is_following %}bi-person-check{% else %}bi-person-add{% endif %}"></i>
+                                <span id="follow-text">{% if is_following %}フォロー中{% else %}フォロー{% endif %}</span>
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
             </div>
-        
         </div>
 
     </div>

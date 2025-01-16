@@ -80,7 +80,9 @@
                     <!-- Link to Profile -->
                     <a href="{% url 'accounts:profile' %}" class="text-decoration-none d-flex align-items-center me-3">
                         <i class="bi bi-ubuntu me-2"></i>
-                        <span>{{ user.username }}</span>
+                        <!-- user.usernameの場合、ユーザープロフィール画面のusernameと重複する -->
+                        <!-- requestUserではなく、ユーザープロフィールに表示されるユーザーが表示されてしまう -->
+                        <span>{{ request.user }}</span>
                         <i class="bi bi-box-arrow-in-right ms-2" style="font-size: 0.8rem;"></i>
                     </a>
                     <!-- Favorite Icon -->
