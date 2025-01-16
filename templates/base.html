@@ -74,38 +74,51 @@
                     <i class="bi bi-filter"></i>
                 </button>
             </form>
+
             <!-- User Section -->
             <div class="d-flex align-items-center">
                 {% if user.is_authenticated %}
                     <!-- Link to Profile -->
-                    <a href="{% url 'accounts:profile' %}" class="text-decoration-none d-flex align-items-center me-3">
-                        <i class="bi bi-ubuntu me-2"></i>
-                        <!-- user.usernameの場合、ユーザープロフィール画面のusernameと重複する -->
-                        <!-- requestUserではなく、ユーザープロフィールに表示されるユーザーが表示されてしまう -->
-                        <span>{{ request.user }}</span>
-                        <i class="bi bi-box-arrow-in-right ms-2" style="font-size: 0.8rem;"></i>
+                    <a href="{% url 'accounts:profile' %}" class="text-decoration-none d-flex align-items-center me-3 text-primary">
+                        {% if request.user.icon %}
+                            <!-- ユーザーのアイコンを表示 -->
+                            <img src="{{ request.user.icon.url }}" alt="{{ request.user.username }}" 
+                                class="rounded-circle me-2" 
+                                style="width: 2.1rem; height: 2.1rem; object-fit: cover;"> <!-- アイコンサイズを大きく -->
+                        {% else %}
+                            <!-- デフォルトアイコンを表示 -->
+                            <i class="bi bi-person-circle me-2 text-secondary" style="font-size: 2.1rem;"></i> <!-- アイコンのフォントサイズを大きく -->
+                        {% endif %}
+                        <span class="text-secondary" style="font-size: 1.2rem;">{{ request.user.username }}</span> <!-- ユーザー名を大きく -->
+                        <i class="bi bi-box-arrow-in-up-right ms-1 text-secondary" style="font-size: 0.8rem;"></i> <!-- 矢印アイコンを大きく -->
                     </a>
+
                     <!-- Favorite Icon -->
                     <a href="{% url 'products:favorite_list' %}" class="me-3 text-decoration-none">
-                        <i class="bi bi-bookmark-fill text-primary"></i>
+                        <i class="bi bi-bookmarks-fill text-secondary" style="font-size: 1.5rem;"></i> <!-- アイコンサイズを大きく -->
                     </a>
-                    <!-- Chat Icon -->
+                    <!-- Bell Icon -->
                     <a href="#" class="me-3 text-decoration-none">
-                        <i class="bi bi-chat-right-text-fill text-primary"></i>
+                        <i class="bi bi-bell-fill text-secondary" style="font-size: 1.5rem;"></i> <!-- アイコンサイズを大きく -->
                     </a>
                     <!-- Camera Icon -->
                     <a href="{% url 'products:product_create' %}" class="me-3 text-decoration-none">
-                        <i class="bi bi-camera-fill text-primary"></i>
+                        <i class="bi bi-camera-fill text-secondary" style="font-size: 1.5rem;"></i> <!-- アイコンサイズを大きく -->
                     </a>
+
+                    
                     <!-- Logout Icon -->
                     <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-link text-decoration-none p-0">
-                            <i class="bi bi-box-arrow-in-right text-primary"></i> ログアウト
+                        <button type="submit" class="btn btn-outline-danger d-flex align-items-center">
+                            <i class="bi bi-box-arrow-right me-2"></i> ログアウト
                         </button>
                     </form>
+
                 {% else %}
-                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary">ログイン</a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary d-flex align-items-center me-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> ログイン
+                    </a>
                 {% endif %}
             </div>
         </div>
