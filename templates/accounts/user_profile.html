@@ -48,6 +48,35 @@
             });
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkbox = document.getElementById('availableOnlyCheckbox');
+
+        // 要素が見つからない場合のエラーハンドリング
+        if (!checkbox) {
+            console.error("要素が見つかりません: #availableOnlyCheckbox");
+            return;
+        }
+
+        checkbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+
+            // チェックボックスの状態をデバッグ表示
+            console.log("チェックボックスの状態:", isChecked ? "販売中のみ表示" : "すべての商品を表示");
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (isChecked) {
+                urlParams.set('available_only', 'true'); // 販売中のみ表示
+            } else {
+                urlParams.delete('available_only'); // すべての商品を表示
+            }
+
+            // URLを更新してリロード
+            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+            console.log("リダイレクト先URL:", newUrl); // デバッグ用に新しいURLを表示
+            window.location.href = newUrl;
+        });
+    });
 </script>
 
 <!-- container mt-5の影響で検索フォームが中央に配置できない -->
@@ -115,28 +144,53 @@
     
 
     <!-- 出品商品リスト -->
-    <h3 class="mt-5">出品中の商品</h3>
-    <div class="row">
-        {% for product in page_obj %}
-            <div class="col-md-4 mb-4">
-                <div class="card hover-effect">
-                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
-                    {% if product.status == "sold_out" %}
-                        <div class="sold-overlay">
-                            <object type="image/svg+xml" data="{% static 'images/sold_layer.svg' %}" class="sold-image"></object>
-                        </div>
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ product.title }}</h5>
-                        <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                        <p class="card-text"><strong>価格:</strong> ¥{{ product.price }}</p>
-                        <p class="card-text"><strong>状態:</strong> {{ product.get_condition_display }}</p>
-                        <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary">詳細を見る</a>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
+    <h3 class="mt-5">{{ profile_user.username }}が出品した商品</h3>
+
+    <!-- チェックボックス -->
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="availableOnlyCheckbox" 
+            {% if request.GET.available_only == 'true' %}checked{% endif %}>
+        <label class="form-check-label" for="availableOnlyCheckbox">
+            販売中のみ表示
+        </label>
     </div>
+
+    <div class="row">
+        {% if page_obj %}
+            {% if page_obj.object_list|length > 0 %}
+                {% for product in page_obj %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card hover-effect">
+                            <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                            {% if product.status == "sold_out" %}
+                                <div class="sold-overlay">
+                                    <object type="image/svg+xml" data="{% static 'images/sold_layer.svg' %}" class="sold-image"></object>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.title }}</h5>
+                                <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                                <p class="card-text"><strong>価格:</strong> ¥{{ product.price }}</p>
+                                <p class="card-text"><strong>状態:</strong> {{ product.get_condition_display }}</p>
+                                <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="d-flex justify-content-center align-items-center flex-column">
+                    <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                    <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">販売されている商品はありません</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="d-flex justify-content-center align-items-center flex-column">
+                <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
+                <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">出品されている商品はありません</p>
+            </div>
+        {% endif %}
+    </div>
+    
 
     <!-- ページネーションリンク -->
     <nav aria-label="Page navigation">
