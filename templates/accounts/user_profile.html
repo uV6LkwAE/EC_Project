@@ -59,8 +59,8 @@
     <div class="d-flex align-items-center justify-content-center p-4 bg-light rounded shadow-sm">
         <!-- 出品者アイコン -->
         <div class="me-3">
-            {% if product.seller.icon %}
-                <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン" 
+            {% if profile_user.icon %}
+                <img src="{{ profile_user.icon.url }}" alt="{{ profile_user.username }}のアイコン" 
                     class="img-fluid rounded-circle" style="width: 64px; height: 64px;" />
             {% else %}
                 <i class="bi bi-person-circle text-secondary" style="font-size: 64px;"></i>
@@ -70,7 +70,7 @@
         <!-- 出品者の名前とレーティング -->
         <div style="margin-left: 0.5rem;">
             <p class="m-0">
-                <strong class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">{{ user.username }}</strong>
+                <strong class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">{{ profile_user.username }}</strong>
             </p>
             <!-- レーティング（仮の星5つ） -->
             <div class="mt-1">
@@ -105,7 +105,7 @@
 
     <!-- 出品商品検索フォーム -->
     <div class="search-bar mt-4 d-flex justify-content-center">
-        <form method="get" action="{% url 'accounts:user_profile' user_id=user.id %}" class="input-group col-12 col-md-6 col-lg-4">
+        <form method="get" action="{% url 'accounts:user_profile' user_id=profile_user.id %}" class="input-group col-12 col-md-6 col-lg-4">
             <input type="text" name="q" class="form-control" placeholder="この出品者の商品から探す" value="{{ request.GET.q }}">
             <button type="submit" class="btn btn-outline-secondary">
                 <i class="bi bi-search"></i>

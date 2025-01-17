@@ -88,7 +88,9 @@ class ProfileView(TemplateView):
         # ユーザー情報を取得
         user_id = kwargs.get('user_id')
         user = get_object_or_404(CustomUser, pk=user_id)
-        context['user'] = user
+        # 上書きされてしまう
+        # context['user'] = user
+        context['profile_user'] = user
 
         # 現在のリクエストユーザーをテンプレートに渡す
         context['request'] = self.request
@@ -97,8 +99,11 @@ class ProfileView(TemplateView):
         profile_user = get_object_or_404(CustomUser, pk=user_id)
         context['profile_user'] = profile_user
 
-        # フォロー状態を判定
-        is_following = Follow.objects.filter(follower=self.request.user, followed=profile_user).exists()
+        # フォロー状態を判定（修正済み）
+        if self.request.user.is_authenticated:
+            is_following = Follow.objects.filter(follower=self.request.user, followed=profile_user).exists()
+        else:
+            is_following = False
         context['is_following'] = is_following
         
         # 出品中の商品をフィルタリング
