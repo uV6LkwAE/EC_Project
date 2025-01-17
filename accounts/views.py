@@ -108,6 +108,11 @@ class ProfileView(TemplateView):
         
         # 出品中の商品をフィルタリング
         products = Product.objects.filter(seller=user)
+
+        # "販売中のみ表示"が選択されている場合のフィルタリング
+        available_only = self.request.GET.get('available_only') == 'true'
+        if available_only:
+            products = products.filter(status='available')  # 販売中のみ
         
         # 検索クエリが存在する場合
         search_query = self.request.GET.get('q', '')
