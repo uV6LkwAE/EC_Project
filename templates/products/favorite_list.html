@@ -7,7 +7,7 @@
     <h2>お気に入り商品一覧</h2>
 
     <!-- 検索フォーム -->
-    <div class="search-bar mt-4 d-flex justify-content-center">
+    <div class="search-bar mt-4 mb-5 d-flex justify-content-center">
         <form method="get" action="{% url 'products:favorite_list' %}" class="input-group col-12 col-md-6 col-lg-4">
             <input type="text" name="q" class="form-control" placeholder="商品を検索" value="{{ request.GET.q }}">
             <button type="submit" class="btn btn-outline-secondary">
@@ -80,7 +80,7 @@
         </nav>
 
     {% else %}
-        <div class="d-flex justify-content-center align-items-center flex-column">
+        <div class="d-flex justify-content-center align-items-center flex-column mt-5">
             <!-- アイコン部分 -->
             <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
             <!-- メッセージ部分 -->
