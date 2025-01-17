@@ -9,7 +9,7 @@
     <!-- 検索フォーム -->
     <div class="search-bar mt-4 mb-5 d-flex justify-content-center">
         <form method="get" action="{% url 'products:favorite_list' %}" class="input-group col-12 col-md-6 col-lg-4">
-            <input type="text" name="q" class="form-control" placeholder="商品を検索" value="{{ request.GET.q }}">
+            <input type="text" name="q" class="form-control" placeholder="お気に入りした商品から探す" value="{{ request.GET.q }}">
             <button type="submit" class="btn btn-outline-secondary">
                 <i class="bi bi-search"></i>
             </button>
