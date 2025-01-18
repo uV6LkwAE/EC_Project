@@ -56,14 +56,26 @@
                                 {% endif %}
 
                                 <!-- アイコン -->
-                                <div class="mb-3">
-                                    <label for="id_icon" class="form-label">アイコン</label>
+                                <div class="position-relative d-inline-block">
                                     {% if user.icon %}
-                                        <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン" class="img-fluid rounded-circle" style="width: 10vw; height: 10vw; object-fit: cover; border-radius: 50%;">
+                                        <img src="{{ user.icon.url }}" alt="{{ user.username }}のアイコン"
+                                             class="img-fluid rounded-circle profile-icon"
+                                             style="width: 8vw; height: 8vw; object-fit: cover;" />
+                                        <div class="icon-overlay">
+                                            <i class="bi bi-pencil-fill edit-icon"></i>
+                                            <i class="bi bi-trash delete-icon"></i>
+                                        </div>
                                     {% else %}
-                                        <input type="file" name="icon" class="form-control">
+                                        <i class="bi bi-person-circle profile-placeholder"
+                                           style="font-size: 8vw; color: #6c757d;"></i>
+                                        <div class="icon-overlay">
+                                            <i class="bi bi-pencil-fill edit-icon"></i>
+                                        </div>
                                     {% endif %}
+                                    <input type="file" id="icon-upload" name="icon" class="d-none">
                                 </div>
+                                
+                                
                                 
                                 <!-- ユーザー名 -->
                                 <div class="mb-3">
@@ -112,6 +124,105 @@
 </div>
 
 <script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('icon-upload');
+    const editIcon = document.querySelector('.edit-icon');
+    const deleteIcon = document.querySelector('.delete-icon');
+
+    // 編集アイコンのクリックでファイル選択
+    if (editIcon) {
+        editIcon.addEventListener('click', () => {
+            fileInput.click();
+        });
+    }
+
+    // ファイル選択時にアイコンをプレビューし、サーバーにアップロード
+    if (fileInput) {
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('icon', file);
+
+                fetch("{% url 'accounts:upload_icon' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const profileIcon = document.querySelector('.profile-icon');
+                            const placeholderIcon = document.querySelector('.profile-placeholder');
+                            if (!profileIcon) {
+                                const newIcon = document.createElement('img');
+                                newIcon.src = e.target.result;
+                                newIcon.alt = "ユーザーのアイコン";
+                                newIcon.className = "img-fluid rounded-circle profile-icon";
+                                newIcon.style.cssText = "width: 8vw; height: 8vw; object-fit: cover; border-radius: 50%;";
+                                const parent = document.querySelector('.position-relative');
+                                parent.insertBefore(newIcon, parent.firstChild);
+                                if (placeholderIcon) placeholderIcon.remove();
+                            } else {
+                                profileIcon.src = e.target.result;
+                                profileIcon.classList.remove('d-none');
+                                if (placeholderIcon) placeholderIcon.classList.add('d-none');
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        console.error('アイコンのアップロードに失敗しました:', data.message);
+                    }
+                })
+                .catch(error => console.error('エラーが発生しました:', error));
+            }
+        });
+    }
+
+    // 削除アイコンのクリックでデフォルト表示とサーバーへの削除リクエスト送信
+    if (deleteIcon) {
+        deleteIcon.addEventListener('click', () => {
+            fetch("{% url 'accounts:delete_icon' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const profileIcon = document.querySelector('.profile-icon');
+                    if (profileIcon) {
+                        profileIcon.remove(); // 現在の画像を削除
+                    }
+
+                    // デフォルトのアイコンを動的に作成
+                    const defaultIcon = document.createElement('i');
+                    defaultIcon.className = 'bi bi-person-circle profile-placeholder';
+                    defaultIcon.style.cssText = 'font-size: 8vw; color: #6c757d;';
+
+                    // 親要素にデフォルトアイコンを追加
+                    const parent = document.querySelector('.position-relative');
+                    parent.insertBefore(defaultIcon, parent.firstChild);
+                } else {
+                    console.error('アイコン削除に失敗しました:', data.message);
+                }
+            })
+            .catch(error => console.error('エラーが発生しました:', error));
+        });
+    }
+});
+
+
+
+
 // 購入した商品
 document.getElementById('purchased-items-btn').addEventListener('click', function() {
     fetch("{% url 'accounts:purchased_items' %}")
@@ -325,6 +436,58 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
         transform: scale(1.05); /* カードが少し広がる（1.05倍） */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
     }
+
+
+    /* 編集アイコンと削除アイコンのスタイル */
+    .icon-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        visibility: hidden;
+    }
+
+    .position-relative {
+        display: flex;
+        justify-content: center; /* 中央に配置 */
+        align-items: center; /* 中央揃え */
+        margin-bottom: 15px;
+    }
+
+    .position-relative:hover .icon-overlay {
+        visibility: visible; /* ホバー時に表示 */
+    }
+
+    .edit-icon, .delete-icon {
+        font-size: 2rem;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+    }
+
+    .edit-icon {
+        color: blue;
+        opacity: 0.3; /* 初期透明度 */
+    }
+
+    .edit-icon:hover {
+        opacity: 1;
+    }
+
+    .delete-icon {
+        color: red;
+    }
+    
+    .profile-placeholder, .profile-icon {
+        display: block;
+        width: 8vw;
+        height: 8vw;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
 </style>
 
 {% endblock %}

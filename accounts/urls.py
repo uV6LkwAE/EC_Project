@@ -19,4 +19,6 @@ urlpatterns = [
     path('trading-items/', views.trading_items, name='trading_items'),
     path('follow-list/', views.follow_list, name='follow_list'),
     path('toggle-follow/', views.toggle_follow, name='toggle_follow'),
+    path('delete-icon/', views.delete_icon, name='delete_icon'),
+    path('upload-icon/', views.upload_icon, name='upload_icon'),
 ]

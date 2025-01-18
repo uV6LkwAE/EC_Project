@@ -260,3 +260,27 @@ def toggle_follow(request):
         return JsonResponse({'status': 'followed'})
 
     return JsonResponse({'error': '無効なリクエスト'}, status=400)
+
+
+@login_required
+def delete_icon(request):
+    if request.method == "POST":
+        user = request.user
+        # ユーザーのアイコンを削除
+        if user.icon:
+            user.icon.delete()
+            user.icon = None
+            user.save()
+        return JsonResponse({"status": "success"}, status=200)
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+
+@login_required
+def upload_icon(request):
+    if request.method == "POST" and 'icon' in request.FILES:
+        user = request.user
+        user.icon.delete()  # 古いアイコンを削除
+        user.icon = request.FILES['icon']
+        user.save()
+        return JsonResponse({"status": "success"}, status=200)
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
