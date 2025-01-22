@@ -102,7 +102,7 @@
                 <strong class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">{{ profile_user.username }}</strong>
             </p>
             <!-- レーティング表示 -->
-            <div class="ratings mt-1" data-bs-toggle="modal" data-bs-target="#ratingsModal" data-bs-placement="top" 
+            <div class="ratings mt-1" data-bs-toggle="modal" data-bs-toggle="tooltip" data-bs-target="#ratingsModal" data-bs-placement="top" 
             title="{% if good_rating_percentage is not None %}{{ good_rating_percentage }}% の良い評価{% else %}評価がありません{% endif %}">
             <div class="d-flex align-items-center">
                 {% if good_rating_percentage is None %}
