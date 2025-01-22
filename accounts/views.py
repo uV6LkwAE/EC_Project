@@ -8,12 +8,14 @@ from django.contrib.auth.views import LoginView, LogoutView  # Django標準の�
 from .forms import SignupForm, CustomLoginForm, ProfileEditForm  # カスタムログインフォームをインポート
 from .models import CustomUser
 from .models import Follow
+from transactions.models import TransactionRating
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from transactions.models import Transaction
 from products.models import Product
 from django.db.models import Q
+import math
 
 
 # サインアップビュー
@@ -57,9 +59,32 @@ class MypageView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # 現在のユーザー情報をコンテキストに追加
-        context['user'] = self.request.user
+        user = self.request.user
+
+        # 評価データを取得
+        total_ratings = TransactionRating.objects.filter(rated_user=user).count()
+        good_ratings = TransactionRating.objects.filter(rated_user=user, rating='good').count()
+        bad_ratings = TransactionRating.objects.filter(rated_user=user, rating='bad').count()
+
+        # 良い評価の割合を計算またはNoneを設定
+        if total_ratings > 0:
+            good_rating_percentage = math.floor((good_ratings / total_ratings) * 100)
+        else:
+            good_rating_percentage = None
+
+        # コンテキストに追加
+        context.update({
+            'user': user,
+            'good_rating_percentage': good_rating_percentage,
+            'good_ratings': TransactionRating.objects.filter(rated_user=user, rating='good').order_by('-created_at')[:10],
+            'bad_ratings': TransactionRating.objects.filter(rated_user=user, rating='bad').order_by('-created_at')[:10],
+            'good_ratings_count': good_ratings,
+            'bad_ratings_count': bad_ratings,
+            'total_ratings': total_ratings,
+        })
+
         return context
+
 
 # プロフィール編集ビュー
 class MypageEditView(LoginRequiredMixin, UpdateView):
@@ -78,6 +103,7 @@ class MypageEditView(LoginRequiredMixin, UpdateView):
         context['form'] = self.get_form()
         return context
 
+'''
 # 他のユーザーのプロフィールビュー
 class ProfileView(TemplateView):
     template_name = 'accounts/user_profile.html'
@@ -124,10 +150,92 @@ class ProfileView(TemplateView):
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
+        # 評価データを取得
+        total_ratings = TransactionRating.objects.filter(rated_user=profile_user).count()
+        good_ratings = TransactionRating.objects.filter(rated_user=profile_user, rating='good').count()
+
+        # 良い評価の割合を計算またはNoneを設定
+        if total_ratings > 0:
+            good_rating_percentage = math.floor((good_ratings / total_ratings) * 100)
+        else:
+            good_rating_percentage = None  # 評価がない場合はNoneを設定
+
+        # コンテキストに追加
+        context['good_rating_percentage'] = good_rating_percentage
+        # デバッグ
+        # context['good_rating_percentage'] = None
+        print(good_rating_percentage)
         context['page_obj'] = page_obj
         context['is_paginated'] = page_obj.has_other_pages()
         context['search_query'] = search_query  # 検索クエリをテンプレートに渡す
+
+        return 
         
+'''
+
+class ProfileView(TemplateView):
+    template_name = 'accounts/user_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # ユーザー情報を取得
+        user_id = kwargs.get('user_id')
+        profile_user = get_object_or_404(CustomUser, pk=user_id)
+        context['profile_user'] = profile_user
+
+        # 現在のリクエストユーザーをテンプレートに渡す
+        context['request'] = self.request
+
+        # フォロー状態を判定
+        if self.request.user.is_authenticated:
+            is_following = Follow.objects.filter(follower=self.request.user, followed=profile_user).exists()
+        else:
+            is_following = False
+        context['is_following'] = is_following
+        
+        # 出品中の商品をフィルタリング
+        products = Product.objects.filter(seller=profile_user)
+
+        # "販売中のみ表示"が選択されている場合のフィルタリング
+        available_only = self.request.GET.get('available_only') == 'true'
+        if available_only:
+            products = products.filter(status='available')  # 販売中のみ
+        
+        # 検索クエリが存在する場合
+        search_query = self.request.GET.get('q', '')
+        if search_query:
+            products = products.filter(title__icontains=search_query)  # 商品タイトルに検索ワードが含まれている商品を取得
+
+        # ページネーションを適用
+        paginator = Paginator(products, 10)  # 1ページあたり10件表示
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        # 評価データを取得
+        total_ratings = TransactionRating.objects.filter(rated_user=profile_user).count()
+        good_ratings = TransactionRating.objects.filter(rated_user=profile_user, rating='good').count()
+        bad_ratings = TransactionRating.objects.filter(rated_user=profile_user, rating='bad').count()
+
+        # 良い評価の割合を計算またはNoneを設定
+        if total_ratings > 0:
+            good_rating_percentage = math.floor((good_ratings / total_ratings) * 100)
+        else:
+            good_rating_percentage = None  # 評価がない場合はNoneを設定
+
+        # コンテキストに追加
+        context.update({
+            'good_rating_percentage': good_rating_percentage,
+            'good_ratings': TransactionRating.objects.filter(rated_user=profile_user, rating='good').order_by('-created_at')[:10],
+            'bad_ratings': TransactionRating.objects.filter(rated_user=profile_user, rating='bad').order_by('-created_at')[:10],
+            'good_ratings_count': good_ratings,
+            'bad_ratings_count': bad_ratings,
+            'page_obj': page_obj,
+            'is_paginated': page_obj.has_other_pages(),
+            'search_query': search_query,
+            'total_ratings': total_ratings,
+        })
+
         return context
 
 # アカウント削除ビュー

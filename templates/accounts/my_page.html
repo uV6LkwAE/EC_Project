@@ -15,19 +15,56 @@
         {% endif %}
         <!-- ユーザー名 -->
         <h2>{{ user.username }}</h2>
+        <!-- プロフィール編集ボタン -->
+        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 ms-2" data-bs-toggle="modal" data-bs-target="#profileEditModal" style="font-size: 0.85rem;">
+            <i class="bi bi-pencil-square"></i> プロフィールを編集
+        </button>
         <!-- 星評価 -->
         <div class="d-flex justify-content-center align-items-center mt-3">
-            <div>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star text-secondary"></i>
+            <div class="ratings mt-1" data-bs-toggle="modal" data-bs-target="#ratingsModal" data-bs-placement="top" 
+            title="{% if good_rating_percentage is not None %}{{ good_rating_percentage }}% の良い評価{% else %}評価がありません{% endif %}">
+                {% if good_rating_percentage is None %}
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                {% else %}
+                    {% if good_rating_percentage <= 20 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 40 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 60 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 80 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                    {% else %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                    {% endif %}
+                {% endif %}
+                <span class="ms-2 text-muted">({{ total_ratings }})</span>
             </div>
-            <!-- プロフィール編集ボタン -->
-            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#profileEditModal">
-                <i class="bi bi-pencil-square"></i> プロフィールを編集
-            </button>
+
             <!-- プロフィール編集モーダル -->
             <div class="modal fade" id="profileEditModal" tabindex="-1" aria-labelledby="profileEditModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -119,6 +156,81 @@
             <button id="follow-list-btn" class="btn btn-outline-dark">フォローリスト</button>
         </div>
     </div>
+
+    <!-- 評価モーダル -->
+    <div class="modal fade" id="ratingsModal" tabindex="-1" aria-labelledby="ratingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content text-black">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ratingsModalLabel">評価一覧</h5>
+                    <button type="button" class="btn-close btn-close-black" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- タブ -->
+                    <ul class="nav nav-tabs" id="ratingsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="good-tab" data-bs-toggle="tab" data-bs-target="#good" type="button" role="tab" aria-controls="good" aria-selected="true">
+                                良かった ({{ good_ratings_count }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="bad-tab" data-bs-toggle="tab" data-bs-target="#bad" type="button" role="tab" aria-controls="bad" aria-selected="false">
+                                残念だった ({{ bad_ratings_count }})
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- タブコンテンツ -->
+                    <div class="tab-content mt-3" id="ratingsTabContent">
+                        <!-- 良かった評価 -->
+                        <div class="tab-pane fade show active" id="good" role="tabpanel" aria-labelledby="good-tab">
+                            {% for rating in good_ratings %}
+                                <div class="border-bottom py-3">
+                                    <a href="{% url 'accounts:user_profile' rating.rater.id %}" class="text-decoration-none" style="color: #6c757d;">
+                                        <strong>{{ rating.rater.username }}</strong>
+                                    </a> からの評価
+                                    <span class="badge bg-success">{{ rating.rater_role }}</span>
+                                    <div class="alert alert-light mt-2" role="alert">
+                                        {% if rating.comment %}
+                                            {{ rating.comment }}
+                                        {% else %}
+                                            <span style="opacity: 0.3;">コメントがありません</span>
+                                        {% endif %}
+                                    </div>
+                                    <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
+                                </div>
+                            {% empty %}
+                                <p class="text-center py-3">良かった評価はありません。</p>
+                            {% endfor %}
+                        </div>
+
+                        <!-- 残念だった評価 -->
+                        <div class="tab-pane fade" id="bad" role="tabpanel" aria-labelledby="bad-tab">
+                            {% for rating in bad_ratings %}
+                                <div class="border-bottom py-3">
+                                    <a href="{% url 'accounts:user_profile' rating.rater.id %}" class="text-decoration-none" style="color: #6c757d;">
+                                        <strong>{{ rating.rater.username }}</strong>
+                                    </a> からの評価
+                                    <span class="badge bg-danger">{{ rating.rater_role }}</span>
+                                    <div class="alert alert-light mt-2" role="alert">
+                                        {% if rating.comment %}
+                                            {{ rating.comment }}
+                                        {% else %}
+                                            <span style="opacity: 0.3;">コメントがありません</span>
+                                        {% endif %}
+                                    </div>
+                                    <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
+                                </div>
+                            {% empty %}
+                                <p class="text-center py-3">残念だった評価はありません。</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 動的にデータを表示するコンテンツエリア -->
     <div id="dynamic-content" class="mt-5"></div>
 </div>
