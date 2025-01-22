@@ -72,6 +72,9 @@
             <p>カテゴリー: {{ product.category }}</p>
             <p>商品の状態: {{ product.condition }}</p>
             <hr>
+            <h5>支払金額</h5>
+            <p><strong>￥{{ product.price}}</strong></p>
+            <hr>
             <!-- 出品者の情報 -->
             <h4 class="mt-3" style="opacity: 0.6; margin-bottom: 1rem;">出品者の情報</h4>
             <div class="d-flex align-items-center">
@@ -125,15 +128,14 @@
             <h3>購入画面</h3>
             <form method="post">
                 {% csrf_token %}
-                <label for="shipping_address">お届け先を入力してください</label>
-                <textarea id="shipping_address" name="shipping_address" style="width: 100%; height: 100px; margin-bottom: 20px;" required></textarea>
-                <!-- <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px;">購入する</button> -->
-                <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary btn-block">
-                        購入する
-                    </button>
+                <div class="mb-3">
+                    <label for="shipping_address" class="form-label">お届け先を入力してください</label>
+                    <textarea id="shipping_address" name="shipping_address" class="form-control" rows="3" required></textarea>
                 </div>
-            </form>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary btn-block">購入する</button>
+                </div>
+            </form>            
         </div>
     </div>
 {% endblock %}

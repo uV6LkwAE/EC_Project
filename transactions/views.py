@@ -162,6 +162,10 @@ def transaction_detail(request, transaction_id):
             return redirect('transactions:transaction_detail', transaction_id=transaction.id)
     else:
         form = TransactionRatingForm()
+    
+    # 関連するproductを取得
+    product = transaction.product
+    first_image = ProductImage.objects.filter(product=product).order_by('order').first()
         
     return render(request, 'transactions/detail.html', {
         'transaction': transaction,
@@ -174,6 +178,7 @@ def transaction_detail(request, transaction_id):
         'user_is_seller': user_is_seller,
         # 'alert_message': alert_message, 
         'debug_message': debug_message,
+        'first_image': first_image,
     })
 
 @login_required
