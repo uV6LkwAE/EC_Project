@@ -101,14 +101,123 @@
             <p class="m-0">
                 <strong class="text-decoration-none" style="font-size: 1.8rem; color: #6c757d;">{{ profile_user.username }}</strong>
             </p>
-            <!-- レーティング（仮の星5つ） -->
-            <div class="mt-1">
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
-                <i class="bi bi-star-fill text-warning"></i>
+            <!-- レーティング表示 -->
+            <div class="ratings mt-1" data-bs-toggle="modal" data-bs-toggle="tooltip" data-bs-target="#ratingsModal" data-bs-placement="top" 
+            title="{% if good_rating_percentage is not None %}{{ good_rating_percentage }}% の良い評価{% else %}評価がありません{% endif %}">
+            <div class="d-flex align-items-center">
+                {% if good_rating_percentage is None %}
+                    <!-- 評価が無い場合 -->
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                {% else %}
+                    <!-- 良い評価がある場合 -->
+                    {% if good_rating_percentage <= 20 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 40 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 60 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                        <i class="bi bi-star"></i>
+                    {% elif good_rating_percentage <= 80 %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star"></i>
+                    {% else %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <i class="bi bi-star-fill text-warning"></i>
+                    {% endif %}
+                {% endif %}
+                <!-- 総数の表示 -->
+                <span class="ms-2 text-muted">({{ total_ratings }})</span>
             </div>
+        </div>
+        
+
+        <!-- モーダル -->
+        <div class="modal fade" id="ratingsModal" tabindex="-1" aria-labelledby="ratingsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content text-black">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ratingsModalLabel">評価一覧</h5>
+                        <button type="button" class="btn-close btn-close-black" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- タブ -->
+                        <ul class="nav nav-tabs" id="ratingsTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="good-tab" data-bs-toggle="tab" data-bs-target="#good" type="button" role="tab" aria-controls="good" aria-selected="true">良かった ({{ good_ratings_count }})</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="bad-tab" data-bs-toggle="tab" data-bs-target="#bad" type="button" role="tab" aria-controls="bad" aria-selected="false">残念だった ({{ bad_ratings_count }})</button>
+                            </li>
+                        </ul>
+
+                        <!-- タブコンテンツ -->
+                        <div class="tab-content" id="ratingsTabContent">
+                            <div class="tab-pane fade show active" id="good" role="tabpanel" aria-labelledby="good-tab">
+                                {% for rating in good_ratings %}
+                                    <div class="border-bottom py-3">
+                                        <a href="{% url 'accounts:user_profile' rating.rater.id %}" class="text-decoration-none" style="color: #6c757d;">
+                                            <strong>{{ rating.rater.username }}</strong>
+                                        </a> からの評価
+                                        <span class="badge bg-success">{{ rating.rater_role }}</span>
+                                        <div class="alert alert-light mt-2" role="alert">
+                                            {% if rating.comment %}
+                                                {{ rating.comment }}
+                                            {% else %}
+                                                <span style="opacity: 0.3;">コメントがありません</span>
+                                            {% endif %}
+                                        </div>
+                                        <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-center py-3">良かった評価はありません。</p>
+                                {% endfor %}
+                            </div>
+                            <div class="tab-pane fade" id="bad" role="tabpanel" aria-labelledby="bad-tab">
+                                {% for rating in bad_ratings %}
+                                    <div class="border-bottom py-3">
+                                        <a href="{% url 'accounts:user_profile' rating.rater.id %}" class="text-decoration-none" style="color: #6c757d;">
+                                            <strong>{{ rating.rater.username }}</strong>
+                                        </a> からの評価
+                                        <span class="badge bg-danger">{{ rating.rater_role }}</span>
+                                        <div class="alert alert-light mt-2" role="alert">
+                                            {% if rating.comment %}
+                                                {{ rating.comment }}
+                                            {% else %}
+                                                <span style="opacity: 0.3;">コメントがありません</span>
+                                            {% endif %}
+                                        </div>
+                                        <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-center py-3">残念だった評価はありません。</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     
         <!-- フォローボタン -->
@@ -127,10 +236,6 @@
             {% endif %}
         {% endif %}
     </div>
-
-
-
-
 
     <!-- 出品商品検索フォーム -->
     <div class="search-bar mt-4 d-flex justify-content-center">
@@ -261,7 +366,6 @@
         width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
         height: 100%; /* 同じく高さも合わせる */
     }
-
 
 </style>
 {% endblock %}

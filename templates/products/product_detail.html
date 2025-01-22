@@ -360,14 +360,52 @@
                             <strong>{{ product.seller.username }}</strong>
                         </a>
                     </p>
-                    <!-- レーティング（仮の星5つ） -->
-                    <div class="mt-1">
-                        <i class="bi bi-star-fill text-warning"></i>
-                        <i class="bi bi-star-fill text-warning"></i>
-                        <i class="bi bi-star-fill text-warning"></i>
-                        <i class="bi bi-star-fill text-warning"></i>
-                        <i class="bi bi-star-fill text-warning"></i>
-                    </div>
+                    <div class="d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                    title="{% if good_rating_percentage is not None %}{{ good_rating_percentage }}% の良い評価{% else %}評価がありません{% endif %}">
+                    <!-- レーティングアイコン -->
+                    {% if good_rating_percentage is None %}
+                        <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                        <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                        <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                        <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                        <i class="bi bi-star" style="opacity: 0.3;" disabled></i>
+                    {% else %}
+                        {% if good_rating_percentage <= 20 %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        {% elif good_rating_percentage <= 40 %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        {% elif good_rating_percentage <= 60 %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        {% elif good_rating_percentage <= 80 %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                        {% else %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                        {% endif %}
+                    {% endif %}
+                    <!-- 評価の総数 -->
+                    <span class="ms-2 text-muted">({{ total_ratings }})</span>
+                </div>
+                
                 </div>
 
                 <!-- フォローボタン -->
@@ -539,8 +577,8 @@
         height: 100%; /* 同じく高さも合わせる */
     }
 
-        /* メインスライダー画像 */
-        .splide__slide img {
+    /* メインスライダー画像 */
+    .splide__slide img {
         width: 100%;  /* メインスライダーは100%の幅 */
         height: auto;
         object-fit: contain;  /* 画像が枠内に収まるように調整 */

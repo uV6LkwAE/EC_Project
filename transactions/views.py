@@ -3,13 +3,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from .models import Transaction, TransactionRating
 from .forms import TransactionRatingForm
-from products.models import Product
+from products.models import Product, ProductImage
+from accounts.models import Follow
 from django.urls import reverse 
 # from django.contrib import messages
 
 @login_required
 def initiate_transaction(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    first_image = ProductImage.objects.filter(product=product).order_by('order').first()
 
     # テンプレート側で"不正な操作です"とすべて表示
     # 出品者自身による購入を禁止
@@ -51,7 +53,10 @@ def initiate_transaction(request, product_id):
 
         return redirect('transactions:transaction_detail', transaction_id=transaction.id)
 
-    return render(request, 'transactions/confirm.html', {'product': product})
+    return render(request, 'transactions/confirm.html', {
+        'product': product,
+        'first_image': first_image,
+    })
 
 @login_required
 def update_transaction_status(request, transaction_id):
@@ -157,6 +162,10 @@ def transaction_detail(request, transaction_id):
             return redirect('transactions:transaction_detail', transaction_id=transaction.id)
     else:
         form = TransactionRatingForm()
+    
+    # 関連するproductを取得
+    product = transaction.product
+    first_image = ProductImage.objects.filter(product=product).order_by('order').first()
         
     return render(request, 'transactions/detail.html', {
         'transaction': transaction,
@@ -169,6 +178,7 @@ def transaction_detail(request, transaction_id):
         'user_is_seller': user_is_seller,
         # 'alert_message': alert_message, 
         'debug_message': debug_message,
+        'first_image': first_image,
     })
 
 @login_required
@@ -263,3 +273,4 @@ def submit_transaction_rating(request, transaction_id):
         return render(request, 'transactions/rating_form.html', {'form': form, 'transaction': transaction})
 
     return redirect('transactions:transaction_detail', transaction_id=transaction.id)
+

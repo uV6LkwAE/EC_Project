@@ -7,11 +7,13 @@ from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
 from .models import Product, ProductImage, Favorite, Comment
 from accounts.models import Follow
+from transactions.models import TransactionRating
 from .forms import ProductForm
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
 import json
+import math
 from django.http import JsonResponse
 from django.http import HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
@@ -336,6 +338,24 @@ class ProductDetailView(DetailView):
         else:
             # 未認証の場合はフォロー情報を渡さない
             context['is_following'] = False
+
+
+        # 評価データを取得
+        seller = product.seller
+        total_ratings = TransactionRating.objects.filter(rated_user=seller).count()
+        good_ratings = TransactionRating.objects.filter(rated_user=seller, rating='good').count()
+
+        # 良い評価の割合を計算
+        if total_ratings > 0:
+            good_rating_percentage = math.floor((good_ratings / total_ratings) * 100)
+        else:
+            good_rating_percentage = None
+
+        # コンテキストに評価データを追加
+        context.update({
+            'total_ratings': total_ratings,
+            'good_rating_percentage': good_rating_percentage,
+        })
 
         return context
 

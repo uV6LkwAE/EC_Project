@@ -7,167 +7,143 @@
 
 {% block content %}
 
-<!-- viewで出品者,購入者以外のリクエストをブロック -->
-{% if is_get_blocked %}
-    <script type="text/javascript">
-        // リクエストが購入者or出品者ではない場合、アラートを表示して商品詳細にリダイレクト
-        alert('不正な操作です。商品詳細ページに移動します。');
-        window.location.href = "{% url 'products:product_detail' product.id %}";
-    </script>
-{% endif %}
+<div class="container mt-4">
+    <h1 class="mb-4">取引詳細</h1>
 
-{% if transaction.status == 'received' %}
-    {% if not user_rating_exists %}
-        <!-- ログイン中のユーザーが評価を投稿していない場合、かつフォーム送信時以外に発火する -->
-        {% if not form.is_submitted %}
-            <script type="text/javascript">
-                document.addEventListener('DOMContentLoaded', function() {
-                    alert("ステータスが受け取り完了に更新されました。\n両者から評価が投稿されると、取引が完了します");
-                    
-                    // #ratingModalをクリックする
-                    var modalButton = document.getElementById('ratingModalButton');  // ボタンにidを追加
-                    if (modalButton) {
-                        modalButton.click();  // ボタンをクリックしてモーダルを開く
-                    }
-                });
-            </script>
-        {% endif %}
-    {% endif %}
-{% endif %}
+    <!-- 商品情報 -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card hover-effect">
+                <div class="card-img-top position-relative">
+                    <div class="sold-overlay">
+                        <object type="image/svg+xml" data="{% static 'images/sold_layer.svg' %}" class="sold-image"></object>
+                    </div>
+                    <img src="{{ first_image.image.url }}" class="card-img-top" alt="商品画像">
+                </div>
+                <div class="card-body">
+                    <h2 class="card-title">{{ transaction.product.title }}</h2>
+                    <h5 class="card-text">¥{{ transaction.product.price }}</h5>
+                    <a href="{% url 'products:product_detail' transaction.product.id %}" class="btn btn-primary">詳細を見る</a>
+                </div>
+            </div>
+        </div>
 
-{% if transaction.status == 'completed' %}
-<script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {
-        // アラートを表示
-        alert("取引が完了しました。\n完了した取引は購入した商品で確認できます。\nプロフィールページに移動します。");
+        <!-- 取引情報 -->
+        <div class="col-md-8">
+            <h2>取引画面</h2>
 
-        // アラート後にプロフィールページへ遷移
-        window.location.href = "{% url 'accounts:profile' %}";  // アカウントページに遷移
-    });
-</script>
-{% endif %}
+            <!-- ステータスごとのメッセージ -->
+            {% if transaction.status == "order_confirmed" %}
+                <div class="alert alert-danger">
+                    注文が確定しました。出品者からの発送通知をお待ちください。
+                </div>
+            {% elif transaction.status == "shipped" %}
+                <div class="alert alert-danger">
+                    出品者から発送通知が行われました。商品が到着したら「受け取り完了」ボタンを押してください。
+                </div>
+            {% elif transaction.status == "received" %}
+                <!-- 評価に関する追加メッセージ -->
+                <div class="alert alert-danger mt-3 text-center">
+                    {% if user_is_buyer %}
+                        出品者は
+                        {% if buyer_rating_exists %}
+                            すでに評価を投稿しています。
+                        {% else %}
+                            評価をまだ投稿していません。両者から評価が投稿されると、取引が完了します。
+                        {% endif %}
+                    {% elif user_is_seller %}
+                        購入者は
+                        {% if seller_rating_exists %}
+                            すでに評価を投稿しています。
+                        {% else %}
+                            評価をまだ投稿していません。両者から評価が投稿されると、取引が完了します。
+                        {% endif %}
+                    {% endif %}
+                </div>
 
-{% if success_message %}
-    <script type="text/javascript">
-        alert("{{ success_message }}");
-        window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
-    </script>
-{% endif %}
+                {% if not user_rating_exists %}
+                    <!-- ログイン中のユーザーが評価を投稿していない場合、かつフォーム送信時以外に発火する -->
+                    {% if not form.is_submitted %}
+                        <script type="text/javascript">
+                            document.addEventListener('DOMContentLoaded', function() {
+                                alert("ステータスが受け取り完了に更新されました。\n両者から評価が投稿されると、取引が完了します");
+                                
+                                // #ratingModalをクリックする
+                                var modalButton = document.getElementById('ratingModalButton');  // ボタンにidを追加
+                                if (modalButton) {
+                                    modalButton.click();  // ボタンをクリックしてモーダルを開く
+                                }
+                            });
+                        </script>
+                    {% endif %}
+                {% endif %}
 
-{% if error_message %}
-    <script type="text/javascript">
-        // テンプレート側から出品者,購入者ともに重複して評価を投稿することはできない。
-        // 万が一、評価が両者から重複して投稿しようとするとerror_messageを表示
-        // フォームが無効の場合
-        alert("{{ error_message }}");
-        window.location.href = "{% url 'transactions:transaction_detail' transaction.id %}";
-    </script>
-{% endif %}
+                {% if user_is_buyer %}
+                    {% if user_rating_exists %}
+                        <!-- 購入者が評価をすでに投稿している場合 -->
+                        <button type="button" class="btn btn-secondary" disabled>
+                            あなたはすでに評価を投稿しています。
+                        </button>
+                    {% else %}
+                        <!-- 購入者が評価を投稿していない場合 -->
+                        <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                            出品者を評価する
+                        </button>
+                    {% endif %}
+                    {% elif user_is_seller %}
+                        {% if user_rating_exists %}
+                            <!-- 出品者が評価をすでに投稿している場合 -->
+                            <button type="button" class="btn btn-secondary" disabled>
+                                あなたはすでに評価を投稿しています。
+                            </button>
+                        {% else %}
+                            <!-- 出品者が評価を投稿していない場合 -->
+                            <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                                購入者を評価する
+                            </button>
+                        {% endif %}
+                {% endif %}
 
-{% if alert_message %}
-    <script type="text/javascript">
-        alert("{{ alert_message }}");
-    </script>
-{% endif %}
+            {% elif transaction.status == 'completed' %}
+                <div class="alert alert-danger">
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // アラートを表示
+                            alert("取引が完了しました。\n完了した取引は購入した商品で確認できます。\nプロフィールページに移動します。");
 
-
-<h2>取引詳細</h2>
-<p>商品: {{ transaction.product.title }}</p>
-<p>価格: ¥{{ transaction.product.price }}</p>
-<p>購入者: {{ transaction.buyer.username }}</p>
-<p>出品者: {{ transaction.seller.username }}</p>
-<p>配送先: {{ transaction.shipping_address }}</p>
-<p>ステータス: {{ transaction.get_status_display }}</p>
-
-<!-- 購入者用メッセージ -->
-{% if user == transaction.buyer and transaction.status == "pending" %}
-    <p>商品が発送されるまでお待ちください。</p>
-{% endif %}
-
-{% if user == transaction.seller and transaction.status == "order_confirmed" %}
-    <form id="shipping-form" method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
-        {% csrf_token %}
-        <input type="hidden" name="status" value="shipped">
-        <button type="submit" class="btn btn-primary" id="shipping-btn">発送完了</button>
-    </form>
-
-    <script type="text/javascript">
-        document.getElementById('shipping-form').addEventListener('submit', function(event) {
-            // 送信イベントをキャンセルしてアラートを表示
-            event.preventDefault();
-
-            // アラートを表示
-            alert("ステータスが発送完了に更新されました。\n相手が商品を受け取るまでお待ちください。");
-
-            // アラート後にフォームを送信
-            this.submit();
-        });
-    </script>
-{% endif %}
-
-<!-- 購入者用のボタン -->
-{% if user == transaction.buyer and transaction.status == "shipped" %}
-<form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
-    {% csrf_token %}
-    <input type="hidden" name="status" value="received">
-    <button type="submit" class="btn btn-success" id="receiveBtn">商品受け取り完了</button>
-</form>
-{% endif %}
-
-<!-- 評価モーダルボタン -->
-{% if transaction.status == 'received' %}
-    {% if user_is_buyer %}
-        {% if user_rating_exists %}
-            <!-- 購入者が評価をすでに投稿している場合 -->
-            <button type="button" class="btn btn-secondary" disabled>
-                あなたはすでに評価を投稿しています。
-            </button>
-        {% else %}
-            <!-- 購入者が評価を投稿していない場合 -->
-            <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
-                出品者を評価する
-            </button>
-        {% endif %}
-    {% elif user_is_seller %}
-        {% if user_rating_exists %}
-            <!-- 出品者が評価をすでに投稿している場合 -->
-            <button type="button" class="btn btn-secondary" disabled>
-                あなたはすでに評価を投稿しています。
-            </button>
-        {% else %}
-            <!-- 出品者が評価を投稿していない場合 -->
-            <button type="button" id="ratingModalButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
-                購入者を評価する
-            </button>
-        {% endif %}
-    {% endif %}
-
-    <!-- 相手が評価を投稿しているかどうか -->
-    <p>
-        {% if user_is_buyer %}
-            あなたは購入者です。
-            出品者は
-            {% if buyer_rating_exists %}
-                すでに評価を投稿しています。
-            {% else %}
-                評価をまだ投稿していません。
-                両者から評価が投稿されると、取引が完了します。
+                            // アラート後にプロフィールページへ遷移
+                            window.location.href = "{% url 'accounts:profile' %}";  // アカウントページに遷移
+                        });
+                    </script>
+                </div>
             {% endif %}
-        {% elif user_is_seller %}
-            あなたは出品者です。
-            購入者は
-            {% if seller_rating_exists %}
-                すでに評価を投稿しています。
-            {% else %}
-                評価をまだ投稿していません。
-                両者から評価が投稿されると、取引が完了します。  
+
+            <!-- ステータスごとのボタン -->
+            {% if user == transaction.seller and transaction.status == "order_confirmed" %}
+            <form id="shipping-form" method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="shipped">
+                <button type="submit" class="btn btn-primary">発送完了</button>
+            </form>
+            {% elif user == transaction.buyer and transaction.status == "shipped" %}
+            <form method="post" action="{% url 'transactions:update_transaction_status' transaction.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="received">
+                <button type="submit" class="btn btn-success" id="receiveBtn">受け取り完了</button>
+            </form>
             {% endif %}
-        {% endif %}
-    </p>
-{% endif %}
 
-{{ debug_message }}
-
+            <!-- プログレスバー -->
+            <ul class="progressbar mt-4">
+                <li class="{% if progress_percentage >= 0 %}active{% endif %}">注文確定</li>
+                <li class="{% if progress_percentage >= 20 %}active{% endif %} {% if progress_percentage >= 40 %}complete{% endif %}">未発送</li>
+                <li class="{% if progress_percentage >= 40 %}active{% endif %} {% if progress_percentage >= 60 %}complete{% endif %}">発送済み</li>
+                <li class="{% if progress_percentage >= 60 %}active{% endif %} {% if progress_percentage >= 80 %}complete{% endif %}">受け取り完了</li>
+                <li class="{% if progress_percentage == 100 %}active complete{% endif %}">取引完了</li>
+            </ul>
+        </div>
+    </div>
+</div>
 
 <!-- 評価モーダル (フォーム) -->
 <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
@@ -202,15 +178,6 @@
     </div>
 </div>
 
-
-<ul class="progressbar">
-    <li class="{% if progress_percentage >= 0 %}active{% endif %}">注文確定</li>
-    <li class="{% if progress_percentage >= 20 %}active{% endif %} {% if progress_percentage >= 40 %}complete{% endif %}">未発送</li>
-    <li class="{% if progress_percentage >= 40 %}active{% endif %} {% if progress_percentage >= 60 %}complete{% endif %}">発送済み</li>
-    <li class="{% if progress_percentage >= 60 %}active{% endif %} {% if progress_percentage >= 80 %}complete{% endif %}">受け取り完了</li>
-    <li class="{% if progress_percentage == 100 %}active complete{% endif %}">取引完了</li>
-</ul>
-
 <style>
     .progressbar {
         position: relative;
@@ -225,7 +192,7 @@
         position: relative;
         text-align: center;
         text-transform: uppercase;
-        width: 25%; /* ステップごとの幅を25%に設定 */
+        width: 20%;
         color: #999999;
         font-weight: bold;
     }
@@ -234,45 +201,78 @@
         display: block;
         width: 18px;
         height: 18px;
-        margin: 7px auto 20px auto;
+        margin: 0 auto 10px auto;
         content: '';
         text-align: center;
         border-radius: 50%;
-        background-color: #F5F5F5;
+        background-color: #f5f5f5;
+        border: 2px solid #ddd;
     }
 
     .progressbar li:after {
         position: absolute;
         z-index: -1;
-        top: 15px;
+        top: 8px;
         left: -50%;
         width: 100%;
         height: 2px;
         content: '';
-        background-color: #F5F5F5;
+        background-color: #f5f5f5;
     }
 
     .progressbar li:first-child:after {
         content: none;
     }
 
-    .progressbar li.active,
-    .progressbar li.complete {
-        color: #0070BD;
+    .progressbar li.active {
+        color: #007bff;
     }
 
-    .progressbar li.active:before,
-    .progressbar li.complete:before {
-        background-color: #0070BD;
+    .progressbar li.active:before {
+        background-color: #007bff;
+        border-color: #007bff;
     }
 
-    .progressbar li.active:after,
-    .progressbar li.complete:after {
-        background-color: #0070BD;
+    .progressbar li.active:after {
+        background-color: #007bff;
     }
 
-    ul {
-    margin: 40px 0 !important;
+
+
+
+
+
+
+
+
+    /* カードにホバー効果を追加 */
+    .card.hover-effect {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card.hover-effect:hover {
+        transform: scale(1.05); /* カードが少し広がる（1.05倍） */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 影をつけて浮き上がり感を出す */
+    }
+
+    .card-img-top {
+        position: relative;
+        width: 100%; /* 必要に応じて調整 */
+        height: 100%; /* 必要に応じて調整 */
+        overflow: hidden;
+    }
+
+    .sold-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 30%; /* 親要素にぴったり合わせる */
+    }
+
+    .sold-image {
+        width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
+        height: 100%; /* 同じく高さも合わせる */
     }
 
 </style>
