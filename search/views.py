@@ -288,7 +288,7 @@ class ProductListSearchView(ListView):
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
-    paginate_by = 10  # 1ページあたりの表示商品数
+    paginate_by = 12 # 1ページあたりの表示商品数
 
     def get_queryset(self):
         """

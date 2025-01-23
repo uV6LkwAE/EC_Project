@@ -19,7 +19,7 @@
     {% if page_obj %}
         <div class="row mt-5">
             {% for product in page_obj %}
-                <div class="col-md-4 mb-4 position-relative">
+                <div class="col-md-3 mb-4 position-relative">
                     <div class="card hover-effect">
                         <div class="card-img-top position-relative">
                             <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.title }}">

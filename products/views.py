@@ -470,7 +470,7 @@ def favorite_list(request):
         products = [product for product in products if search_query.lower() in product.title.lower()]
 
     # ページネーションを適用
-    paginator = Paginator(products, 10)  # 1ページあたり10件
+    paginator = Paginator(products, 12)  # 1ページあたり10件
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
