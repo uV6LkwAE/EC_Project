@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'accounts',
     'products',
     'search',
-    'transactions'
+    'transactions',
+    'django.contrib.humanize',
 ]
 
 # サイトIDの設定（必須）
