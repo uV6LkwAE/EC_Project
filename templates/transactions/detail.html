@@ -34,15 +34,26 @@
 
             <!-- ステータスごとのメッセージ -->
             {% if transaction.status == "order_confirmed" %}
-                <div class="alert alert-danger">
-                    注文が確定しました。出品者からの発送通知をお待ちください。
-                </div>
+                {% if user_is_buyer %}
+                    <div class="alert alert-danger">
+                        注文が確定しました。出品者からの発送通知をお待ちください。
+                    </div>
+                {% elif user_is_seller %}
+                    <div class="alert alert-danger">
+                        注文が確定しました。発送完了後に、「発送完了」ボタンを押してください。
+                    </div>
+                {% endif %}
             {% elif transaction.status == "shipped" %}
-                <div class="alert alert-danger">
-                    出品者から発送通知が行われました。商品が到着したら「受け取り完了」ボタンを押してください。
-                </div>
+                {% if user_is_buyer %}
+                    <div class="alert alert-danger">
+                        出品者から発送通知が行われました。商品が到着したら「受け取り完了」ボタンを押してください。
+                    </div>
+                {% elif user_is_seller %}
+                    <div class="alert alert-danger">
+                        発送通知が完了しました。購入者からの受け取り完了通知をお待ちください。
+                    </div>
+                {% endif %}
             {% elif transaction.status == "received" %}
-                <!-- 評価に関する追加メッセージ -->
                 <div class="alert alert-danger mt-3 text-center">
                     {% if user_is_buyer %}
                         出品者は
