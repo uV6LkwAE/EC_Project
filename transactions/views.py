@@ -12,6 +12,15 @@ from django.urls import reverse
 def initiate_transaction(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     first_image = ProductImage.objects.filter(product=product).order_by('order').first()
+    profile_user = product.seller
+
+
+    # フォロー状態を判定
+    is_following = False
+    if request.user.is_authenticated:
+        is_following = Follow.objects.filter(
+            follower=request.user, followed=profile_user
+        ).exists()
 
     # テンプレート側で"不正な操作です"とすべて表示
     # 出品者自身による購入を禁止
@@ -56,6 +65,7 @@ def initiate_transaction(request, product_id):
     return render(request, 'transactions/confirm.html', {
         'product': product,
         'first_image': first_image,
+        'is_following': is_following,
     })
 
 @login_required
