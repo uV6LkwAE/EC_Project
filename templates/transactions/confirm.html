@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% block title %}購入確認{% endblock %}
-
+{% load humanize %}
 {% block content %}
     {% if is_post_blocked %}
         <script type="text/javascript">
@@ -73,7 +73,7 @@
             <p>商品の状態: {{ product.condition }}</p>
             <hr>
             <h5>支払金額</h5>
-            <p><strong>￥{{ product.price}}</strong></p>
+            <p><strong>￥{{ product.price | intcomma }}</strong></p>
             <hr>
             <!-- 出品者の情報 -->
             <h4 class="mt-3" style="opacity: 0.6; margin-bottom: 1rem;">出品者の情報</h4>

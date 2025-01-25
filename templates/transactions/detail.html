@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% load static %}
-
+{% load humanize %}
 {% block title %}取引詳細{% endblock %}
 
 {% block content %}
@@ -22,7 +22,7 @@
                 </div>
                 <div class="card-body">
                     <h2 class="card-title">{{ transaction.product.title }}</h2>
-                    <h5 class="card-text">¥{{ transaction.product.price }}</h5>
+                    <h5 class="card-text">¥{{ transaction.product.price | intcomma }}</h5>
                     <a href="{% url 'products:product_detail' transaction.product.id %}" class="btn btn-primary">詳細を見る</a>
                 </div>
             </div>
