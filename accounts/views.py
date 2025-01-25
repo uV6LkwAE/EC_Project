@@ -286,6 +286,7 @@ def purchased_items(request):
             'buyer': t.buyer_id,
             'seller': t.seller_id,
             'created': t.created_at,
+            'first_image': (t.product.images.first().image.url if t.product.images.first() else None) 
         }
         for t in transactions
     ]
@@ -303,6 +304,7 @@ def sold_items(request):
             'title': p.title,
             'price': float(p.price),
             'status': p.status,
+            'first_image': (t.product.images.first().image.url if t.product.images.first() else None) ,
         }
         for p in products
     ]
@@ -324,10 +326,12 @@ def trading_items(request):
             'id': t.id,
             'title': t.product.title,
             'price': float(t.product.price),
-            'status': t.status,
+            'product_status': t.product.status,
+            'transaction_status': t.get_status_display(),
             'buyer': t.buyer_id,
             'seller': t.seller_id,
             'created': t.created_at,
+            'first_image': (t.product.images.first().image.url if t.product.images.first() else None) ,
         }
         for t in transactions
     ]
