@@ -10,6 +10,70 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // 拡大プレビュー機能の初期化
+        (function(){
+            var zoomArea = document.querySelector('.zoom-area');
+            var zoomImage = zoomArea.querySelector('img');
+            var size = 172;
+            var scale = 430 / size;
+            Array.prototype.forEach.call(document.querySelectorAll('.m-lens-container'), function(container){
+                var lens = container.querySelector('.m-lens');
+                var img = container.querySelector('img');
+                container.addEventListener('mouseenter', function(){
+                    var image = container.querySelector('img');
+                    zoomArea.classList.add('active');
+                    zoomImage.setAttribute('src', image.src);
+                    zoomImage.style.width = (image.offsetWidth * scale) + 'px';
+                });
+                container.addEventListener('mouseleave', function(){
+                    zoomArea.classList.remove('active');
+                });
+                var xmax, ymax;
+                img.addEventListener('load', function(){
+                   xmax = img.offsetWidth - size;
+                   ymax = img.offsetHeight - size;
+                });
+                container.addEventListener('mousemove', function(e){
+                    var rect = container.getBoundingClientRect();
+                    var mouseX = e.pageX;
+                    var mouseY = e.pageY;
+                    var positionX = rect.left + window.pageXOffset;
+                    var positionY = rect.top + window.pageYOffset;
+                    var offsetX = mouseX - positionX; /* コンテナの左上からの相対x座標 */
+                    var offsetY = mouseY - positionY; /* コンテナの左上からの相対y座標 */
+                    var left = offsetX - (size / 2);
+                    var top = offsetY - (size / 2);
+
+                    if(left > xmax){
+                      left = xmax;
+                    }
+                    if(top > ymax){
+                      top = ymax;
+                    }
+                    if(left < 0){
+                      left = 0;
+                    }
+                    if(top < 0){
+                      top = 0;
+                    }
+                    lens.style.top = top + 'px';
+                    lens.style.left = left + 'px';
+                    zoomImage.style.marginLeft = -(left * scale) + 'px';
+                    zoomImage.style.marginTop = -(top * scale) + 'px';
+                });
+            });
+        })();
+    });
+
+
+
+
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function () {
         const followForm = document.getElementById('follow-form');
         const followBtn = document.getElementById('follow-btn');
         const followIcon = document.getElementById('follow-icon');
@@ -204,13 +268,23 @@
                 <div class="splide__track">
                     <div class="splide__list">
                         {% for image in product.images.all %}
-                        <li class="splide__slide">
-                            <img src="{{ image.image.url }}" alt="{{ product.title }}">
-                        </li>
+                            <li class="splide__slide">
+                                <!-- 拡大プレビューのコンテナ -->
+                                <div class="m-lens-container">
+                                    <img src="{{ image.image.url }}" alt="{{ product.title }}" class="img-fluid">
+                                    <div class="m-lens"></div>
+                                </div>
+                            </li>
                         {% endfor %}
                     </div>
                 </div>
             </div>
+
+            <!-- 拡大プレビュー領域 -->
+            <div class="zoom-area">
+                <img src="" />
+            </div>
+
 
             <!-- サムネイルスライダー -->
             <div class="splide thumbnail-carousel" aria-label="サムネイルスライダー">
@@ -228,8 +302,8 @@
 
         <!-- 商品情報部分（右側）-->
         <div class="col-md-5">
-            <h2>{{ product.title }}</h2>
-            <p><strong>¥{{ product.price }}</p>
+            <h2 style="opacity: 0.8;">{{ product.title }}</h2>
+            <h4 style="opacity: 0.8;">¥{{ product.price }}</h4>
 
             <div class="d-flex flex-md-row gap-2 mb-3 align-items-center">
                 <!-- お気に入りボタン -->
@@ -610,6 +684,44 @@
     .splide__slide.is-active {
         opacity: 1; /* アクティブなスライドの透明度を1に設定 */
         border: none !important;
+    }
+
+    /* ズーム拡大領域 */
+
+    .m-lens-container {
+        display: inline-block;
+        position: relative;
+    }
+    .m-lens {
+        position: absolute;
+        z-index: 2;
+        background: #90b3e7;
+        opacity: 0.3;
+        height: 172px;
+        width: 172px;
+        display: none;
+    }
+    .m-lens-container:hover .m-lens {
+        display: block;
+    }
+    .zoom-area {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 100%;
+        border: 1px solid #ccc;
+        height: 520px;
+        width: 520px;
+        overflow: hidden;
+        background-color: white;
+        z-index: 100;
+    }
+    .zoom-area.active {
+        display: block;
+    }
+    .zoom-area img {
+        margin-top: -30px;
+        margin-left: -60px;
     }
 
 

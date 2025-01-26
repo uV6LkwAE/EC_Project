@@ -37,9 +37,9 @@
                             </div>
                             
                             <div class="card-body">
-                                <h3 class="card-title">{{ product.title }}</h3>
+                                <h3 class="card-title" style="opacity: 0.8;">{{ product.title }}</h3>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="card-text">¥{{ product.price | intcomma }}</h5>
+                                    <h6 class="card-text" style="opacity: 0.8;">¥{{ product.price | intcomma }}</h6>
                                     <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-primary btn-sm">詳細を見る</a>
                                 </div>
                             </div>
