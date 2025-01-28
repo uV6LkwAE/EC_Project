@@ -497,7 +497,6 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.getElementById('dynamic-content');
-            console.log(contentDiv);
             contentDiv.innerHTML = `
                 <div class="container my-4">
                     <h3 class="mb-4">フォローリスト</h3>
@@ -507,10 +506,63 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
             `;
 
             const rowDiv = contentDiv.querySelector('.row');
-            console.log(rowDiv);
 
             if (data.follow_list.length > 0) {
                 data.follow_list.forEach(user => {
+                    const goodRatingPercentage = user.good_rating_percentage;
+                    const totalRatings = user.total_ratings;
+
+                    let stars = '';
+                    if (goodRatingPercentage === null) {
+                        stars = `
+                            <i class="bi bi-star" style="opacity: 0.3;"></i>
+                            <i class="bi bi-star" style="opacity: 0.3;"></i>
+                            <i class="bi bi-star" style="opacity: 0.3;"></i>
+                            <i class="bi bi-star" style="opacity: 0.3;"></i>
+                            <i class="bi bi-star" style="opacity: 0.3;"></i>
+                        `;
+                    } else if (goodRatingPercentage <= 20) {
+                        stars = `
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        `;
+                    } else if (goodRatingPercentage <= 40) {
+                        stars = `
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        `;
+                    } else if (goodRatingPercentage <= 60) {
+                        stars = `
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                        `;
+                    } else if (goodRatingPercentage <= 80) {
+                        stars = `
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star"></i>
+                        `;
+                    } else {
+                        stars = `
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                        `;
+                    }
+
                     const userCard = `
                         <div class="col">
                             <div class="card hover-effect card shadow-sm h-100" style="min-height: 300px;">
@@ -525,12 +577,9 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
                                             ${user.username}
                                         </a>
                                     </h5>
-                                    <div class="mt-2">
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                        <i class="bi bi-star text-secondary"></i>
+                                    <div class="ratings mt-2" title="${goodRatingPercentage !== null ? `${goodRatingPercentage}% の良い評価` : '評価がありません'}">
+                                        ${stars}
+                                        <span class="ms-2 text-muted">(${totalRatings})</span>
                                     </div>
                                     <button class="btn follow-btn mt-3 mb-2 btn-${user.is_following ? 'primary' : 'outline-primary'}"
                                             data-user-id="${user.id}">
@@ -543,41 +592,39 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
                     rowDiv.insertAdjacentHTML('beforeend', userCard);
                 });
 
-                // 各フォローボタンにクリックイベントを追加
+                // フォローボタンのイベントリスナーを追加
                 document.querySelectorAll('.follow-btn').forEach(button => {
-                    button.addEventListener('click', function(event) {
+                    button.addEventListener('click', function (event) {
                         event.preventDefault();
-
                         const userId = this.dataset.userId;
                         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                        // フォロー・フォロー解除処理
+                        // フォロー・フォロー解除リクエスト
                         fetch("{% url 'accounts:toggle_follow' %}", {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRFToken': csrfToken
+                                'X-CSRFToken': csrfToken,
                             },
-                            body: new URLSearchParams({ user_id: userId })
+                            body: new URLSearchParams({ user_id: userId }),
                         })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'followed') {
-                                this.innerHTML = '<i class="bi bi-person-check"></i> フォロー中';
-                                this.classList.add('btn-primary');
-                                this.classList.remove('btn-outline-primary');
-                            } else if (data.status === 'unfollowed') {
-                                this.innerHTML = '<i class="bi bi-person-add"></i> フォロー';
-                                this.classList.add('btn-outline-primary');
-                                this.classList.remove('btn-primary');
-                            }
-                        })
-                        .catch(error => console.error('Error toggling follow status:', error));
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'followed') {
+                                    this.innerHTML = '<i class="bi bi-person-check"></i> フォロー中';
+                                    this.classList.add('btn-primary');
+                                    this.classList.remove('btn-outline-primary');
+                                } else if (data.status === 'unfollowed') {
+                                    this.innerHTML = '<i class="bi bi-person-add"></i> フォロー';
+                                    this.classList.add('btn-outline-primary');
+                                    this.classList.remove('btn-primary');
+                                }
+                            })
+                            .catch(error => console.error('Error toggling follow status:', error));
                     });
                 });
             } else {
-                contentDiv.innerHTML = `
-                    <h3>フォローリスト</h3>
+                contentDiv.innerHTML += `
                     <div class="d-flex justify-content-center align-items-center flex-column mb-5">
                         <i class="bi bi-database-exclamation" style="font-size: 4rem; color: #6c757d;"></i>
                         <p class="ms-3" style="font-size: 1.5rem; color: #6c757d; text-align: center;">フォローしているユーザーはいません</p>
@@ -587,6 +634,7 @@ document.getElementById('follow-list-btn').addEventListener('click', function() 
         })
         .catch(error => console.error('Error fetching follow list:', error));
 });
+
 
 </script>
 
