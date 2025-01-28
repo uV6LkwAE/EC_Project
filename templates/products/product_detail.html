@@ -518,8 +518,10 @@
                 <form id="comment-form" method="POST">
                     {% csrf_token %}
                     <textarea class="form-control" name="content" placeholder="コメントを投稿" id="comment-textarea" {% if comments_disabled %}disabled{% endif %}></textarea>
-                    <!-- 投稿ボタンにID 'submit-comment'を追加 -->
-                    <button type="submit" class="btn btn-primary mt-3" id="submit-comment" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
+                    <div class="text-end mt-3">
+                        <!-- 投稿ボタンにID 'submit-comment'を追加 -->
+                        <button type="submit" class="btn btn-primary mt-3" id="submit-comment" {% if comments_disabled %}disabled{% endif %}>投稿する</button>
+                    </div>
                 </form>
 
                 <div id="comments">
@@ -577,8 +579,6 @@
                                 </form>
                             </div>
                         </div>
-                    {% empty %}
-                        <p>コメントはまだありません。</p>
                     {% endfor %}
                 </div>
             </div>
