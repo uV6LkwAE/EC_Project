@@ -343,15 +343,24 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.getElementById('dynamic-content');
-            contentDiv.innerHTML = '<h3>購入した商品</h3>';
+            contentDiv.innerHTML = `
+                <div class="container my-4">
+                    <h3 class="mb-4">購入した商品</h3>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                    </div>
+                </div>
+            `;
+
+            const rowDiv = contentDiv.querySelector('.row');
+
             if (data.purchased_items.length > 0) {
                 data.purchased_items.forEach(item => {
-                    contentDiv.innerHTML += `
-                        <div class="col-md-3">
-                            <div class="card hover-effect card mb-3 shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                    const itemCard = `
+                        <div class="col">
+                            <div class="card hover-effect card shadow-sm" style="border-radius: 10px; overflow: hidden;">
                                 <div class="position-relative">
                                     <!-- 商品画像 -->
-                                    <img src="${item.first_image}" class="card-img-top" alt="${item.title}" style="width: 80%; object-fit: cover;">
+                                    <img src="${item.first_image}" class="card-img-top" alt="${item.title}" style="width: 100%; object-fit: cover;">
                                 </div>
                                 <div class="card-body text-center">
                                     <!-- 商品タイトル -->
@@ -364,6 +373,7 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
                             </div>
                         </div>
                     `;
+                    rowDiv.insertAdjacentHTML('beforeend', itemCard);
                 });
             } else {
                 contentDiv.innerHTML += `
@@ -373,8 +383,10 @@ document.getElementById('purchased-items-btn').addEventListener('click', functio
                     </div>
                 `;
             }
-        });
+        })
+        .catch(error => console.error('Error fetching purchased items:', error));
 });
+
 
 // 出品した商品
 document.getElementById('sold-items-btn').addEventListener('click', function() {
@@ -382,15 +394,24 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.getElementById('dynamic-content');
-            contentDiv.innerHTML = '<h3>出品した商品</h3>';
+            contentDiv.innerHTML = `
+                <div class="container my-4">
+                    <h3 class="mb-4">出品した商品</h3>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                    </div>
+                </div>
+            `;
+
+            const rowDiv = contentDiv.querySelector('.row');
+
             if (data.sold_items.length > 0) {
                 data.sold_items.forEach(item => {
-                    contentDiv.innerHTML += `
-                        <div class="col-md-3">
-                            <div class="card hover-effect card mb-3 shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                    const itemCard = `
+                        <div class="col">
+                            <div class="card hover-effect shadow-sm" style="border-radius: 10px; overflow: hidden;">
                                 <div class="position-relative">
                                     <!-- 商品画像 -->
-                                    <img src="${item.first_image}" class="card-img-top" alt="${item.title}" style="width: 20vw; object-fit: cover;">
+                                    <img src="${item.first_image || '/static/images/no-image-available.png'}" class="card-img-top" alt="${item.title}" style="width: 100%; object-fit: cover;">
                                 </div>
                                 <div class="card-body text-center">
                                     <!-- 商品タイトル -->
@@ -403,6 +424,7 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
                             </div>
                         </div>
                     `;
+                    rowDiv.insertAdjacentHTML('beforeend', itemCard);
                 });
             } else {
                 contentDiv.innerHTML += `
@@ -412,8 +434,10 @@ document.getElementById('sold-items-btn').addEventListener('click', function() {
                     </div>
                 `;
             }
-        });
+        })
+        .catch(error => console.error('Error fetching sold items:', error));
 });
+
 
 // 取引中の商品
 document.getElementById('trading-items-btn').addEventListener('click', function() {
@@ -421,15 +445,24 @@ document.getElementById('trading-items-btn').addEventListener('click', function(
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.getElementById('dynamic-content');
-            contentDiv.innerHTML = '<h3>取引中の商品</h3>';
+            contentDiv.innerHTML = `
+                <div class="container my-4">
+                    <h3 class="mb-4">取引中の商品</h3>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                    </div>
+                </div>
+            `;
+
+            const rowDiv = contentDiv.querySelector('.row');
+
             if (data.trading_items.length > 0) {
                 data.trading_items.forEach(item => {
-                    contentDiv.innerHTML += `
-                        <div class="col-md-3">
+                    const itemCard = `
+                        <div class="col">
                             <div class="card hover-effect card mb-3 shadow-sm" style="border-radius: 10px; overflow: hidden;">
                                 <div class="position-relative">
                                     <!-- 商品画像 -->
-                                    <img src="${item.first_image}" class="card-img-top" alt="${item.title}" style="width: 80%; object-fit: cover;">
+                                    <img src="${item.first_image}" class="card-img-top" alt="${item.title}" style="width: 100%; object-fit: cover;">
                                 </div>
                                 <div class="card-body text-center">
                                     <!-- 商品タイトル -->
@@ -444,6 +477,7 @@ document.getElementById('trading-items-btn').addEventListener('click', function(
                             </div>
                         </div>
                     `;
+                    rowDiv.insertAdjacentHTML('beforeend', itemCard);
                 });
             } else {
                 contentDiv.innerHTML += `
@@ -455,6 +489,7 @@ document.getElementById('trading-items-btn').addEventListener('click', function(
             }
         });
 });
+
 
 // フォローリスト
 document.getElementById('follow-list-btn').addEventListener('click', function() {

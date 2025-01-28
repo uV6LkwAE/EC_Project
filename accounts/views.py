@@ -304,7 +304,7 @@ def sold_items(request):
             'title': p.title,
             'price': float(p.price),
             'status': p.status,
-            'first_image': (t.product.images.first().image.url if t.product.images.first() else None) ,
+            'first_image': (p.images.first().image.url if p.images.exists() else None),
         }
         for p in products
     ]
