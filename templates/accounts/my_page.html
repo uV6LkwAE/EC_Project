@@ -196,13 +196,13 @@
                                         {% if rating.comment %}
                                             {{ rating.comment }}
                                         {% else %}
-                                            <span style="opacity: 0.3;">コメントがありません</span>
+                                            <span style="opacity: 0.3;">コメントはありません</span>
                                         {% endif %}
                                     </div>
                                     <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
                                 </div>
                             {% empty %}
-                                <p class="text-center py-3">良かった評価はありません。</p>
+                                <p class="text-center py-3">良かった評価はありません</p>
                             {% endfor %}
                         </div>
 
@@ -218,13 +218,13 @@
                                         {% if rating.comment %}
                                             {{ rating.comment }}
                                         {% else %}
-                                            <span style="opacity: 0.3;">コメントがありません</span>
+                                            <span style="opacity: 0.3;">コメントはありません</span>
                                         {% endif %}
                                     </div>
                                     <small>{{ rating.created_at|date:"Y/m/d H:i" }}</small>
                                 </div>
                             {% empty %}
-                                <p class="text-center py-3">残念だった評価はありません。</p>
+                                <p class="text-center py-3">残念だった評価はありません</p>
                             {% endfor %}
                         </div>
                     </div>
