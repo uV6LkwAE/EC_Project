@@ -304,7 +304,7 @@ def sold_items(request):
             'title': p.title,
             'price': float(p.price),
             'status': p.status,
-            'first_image': (t.product.images.first().image.url if t.product.images.first() else None) ,
+            'first_image': (p.images.first().image.url if p.images.exists() else None),
         }
         for p in products
     ]
@@ -341,16 +341,35 @@ def trading_items(request):
 @login_required
 def follow_list(request):
     follows = Follow.objects.filter(follower=request.user)
-    data = [
-        {
-            'id': follow.followed.id,
-            'username': follow.followed.username,
-            'icon': follow.followed.icon.url if follow.followed.icon else None,
+
+    # 空のリストを初期化
+    data = []
+
+    for follow in follows:
+        profile_user = follow.followed
+
+        # 評価データを取得
+        total_ratings = TransactionRating.objects.filter(rated_user=profile_user).count()
+        good_ratings = TransactionRating.objects.filter(rated_user=profile_user, rating='good').count()
+
+        # 良い評価の割合を計算またはNoneを設定
+        good_rating_percentage = (
+            math.floor((good_ratings / total_ratings) * 100)
+            if total_ratings > 0 else None
+        )
+
+        # データをリストに追加
+        data.append({
+            'id': profile_user.id,
+            'username': profile_user.username,
+            'icon': profile_user.icon.url if profile_user.icon else None,
             'is_following': True,
-        }
-        for follow in follows
-    ]
+            'good_rating_percentage': good_rating_percentage,
+            'total_ratings': total_ratings,
+        })
+
     return JsonResponse({'follow_list': data})
+
 
 
 # フォロー処理
