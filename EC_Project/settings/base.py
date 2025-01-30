@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'search',
     'transactions',
     'django.contrib.humanize',
+    'channels', 
 ]
 
 # サイトIDの設定（必須）
@@ -147,3 +148,13 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# ASGI用の設定
+ASGI_APPLICATION = "EC_Project.asgi.application"
+
+# デフォルトの `CHANNEL_LAYERS` （環境ごとに上書き）
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # 開発用
+    },
+}

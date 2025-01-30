@@ -156,6 +156,41 @@
     </div>
 </div>
 
+<!-- リアルタイムチャット -->
+<div class="chat-container fixed-bottom">
+    <h3 class="text-center">リアルタイムチャット</h3>
+    <div id="chat-box">
+        {% for message in messages %}
+            <div class="chat-message" data-message-id="{{ message.id }}" ondblclick="setReply('{{ message.id }}', '{{ message.content }}')">
+                <strong>{{ message.sender.username }}</strong>: {{ message.content }}
+                {% if message.reply_to %}
+                    <div class="reply-message">↳ {{ message.reply_to.content }}</div>
+                {% endif %}
+                {% if message.is_read %}
+                    <span class="text-muted small">✔ 既読</span>
+                {% endif %}
+                <div class="reaction-menu">
+                    <button onclick="sendReaction('{{ message.id }}', '👍')">👍</button>
+                    <button onclick="sendReaction('{{ message.id }}', '❤️')">❤️</button>
+                    <button onclick="sendReaction('{{ message.id }}', '😂')">😂</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if transaction.status != "completed" %}
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" placeholder="メッセージを入力">
+        <input type="hidden" id="reply-to" value="">
+        <button id="send-button">送信</button>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">この取引は完了しているため、チャットは履歴のみ閲覧可能です。</div>
+    {% endif %}
+    
+    <p id="typing-indicator" style="display:none;">入力中...</p>
+</div>
+
 <!-- 評価モーダル (フォーム) -->
 <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -188,6 +223,122 @@
         </div>
     </div>
 </div>
+
+<script>
+    const transactionId = "{{ transaction.id }}";
+    const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${transactionId}/`);
+
+    chatSocket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log("🔥 WebSocket 受信データ:", data);
+
+        const chatBox = document.getElementById("chat-box");
+
+        if (data.type === "chat_message") {
+            let newMessage = document.createElement("div");
+            newMessage.classList.add("chat-message");
+            newMessage.setAttribute("data-message-id", data.message_id);
+            
+            newMessage.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+
+            if (data.reply_to && data.reply_to !== "null") {
+                let replyElement = document.createElement("div");
+                replyElement.classList.add("reply-message");
+                replyElement.innerText = `↳ ${data.reply_to}`;
+                newMessage.appendChild(replyElement);
+            }
+
+            chatBox.appendChild(newMessage);
+            chatBox.scrollTop = chatBox.scrollHeight; // 最新メッセージへスクロール
+        } 
+
+        // 既読通知を受信したら、ステータスを更新
+        else if (data.type === "update_is_read") {
+            let msgElement = document.querySelector(`.chat-message[data-message-id="${data.message_id}"]`);
+            if (msgElement) {
+                msgElement.classList.add("read");  // CSS で既読スタイル適用
+                msgElement.setAttribute("data-is-read", "true");
+
+                // 既読・未読のラベル更新
+                let statusElement = msgElement.querySelector(".read-status");
+                if (statusElement) {
+                    statusElement.innerText = "✔ 既読";
+                }
+            }
+        }
+        
+        // タイピングメッセージの処理
+        else if (data.typing) {
+            const typingIndicator = document.getElementById("typing-indicator");
+            if (typingIndicator) {
+                typingIndicator.style.display = "block";
+                setTimeout(() => { typingIndicator.style.display = "none"; }, 2000);
+            }
+        }
+    };
+
+
+    document.getElementById("send-button").onclick = function() {
+        const messageInput = document.getElementById("chat-input");
+        const replyTo = document.getElementById("reply-to").value;
+        const message = messageInput.value;
+        chatSocket.send(JSON.stringify({ "message": message, "reply_to": replyTo }));
+        messageInput.value = "";
+        document.getElementById("reply-to").value = "";
+    };
+
+
+
+    function sendReaction(messageId, reaction) {
+        chatSocket.send(JSON.stringify({ "reaction": reaction, "message_id": messageId }));
+    }
+
+    function setReply(messageId, content) {
+        document.getElementById("reply-to").value = messageId;
+        document.getElementById("chat-input").placeholder = `返信: ${content}`;
+    }
+
+    document.getElementById("chat-input").addEventListener("input", function() {
+        chatSocket.send(JSON.stringify({ "typing": true }));
+    });
+
+
+    function updateChatUI(messageData) {
+        console.log("📌 `updateChatUI()` が実行された:", messageData);
+
+        const chatBox = document.getElementById("chat-box");
+        if (!chatBox) {
+            console.error("❌ `#chat-box` が見つかりません");
+            return;
+        }
+
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat-message");
+        messageDiv.setAttribute("data-message-id", messageData.message_id);
+        messageDiv.setAttribute("data-is-read", messageData.is_read ? "true" : "false");
+        
+        messageDiv.innerHTML = `
+            <strong>${messageData.sender}</strong>: ${messageData.message}
+            <span class="read-status">${messageData.is_read ? "✔ 既読" : "未読"}</span>
+        `;
+        
+        if (messageData.reply_to) {
+            const replyDiv = document.createElement("div");
+            replyDiv.classList.add("reply-message");
+            replyDiv.textContent = `↳ ${messageData.reply_to}`;
+            messageDiv.appendChild(replyDiv);
+        }
+
+        // 既読の場合にスタイルを適用
+        if (messageData.is_read) {
+            messageDiv.classList.add("read");
+        }
+
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // 最新メッセージへスクロール
+    }
+
+</script>
 
 <style>
     .progressbar {
@@ -285,6 +436,88 @@
         width: 100%;  /* SVGを画像のサイズに合わせてぴったり配置 */
         height: 100%; /* 同じく高さも合わせる */
     }
+
+
+    /* リアルタイムチャット */
+    .chat-container {
+        background: white;
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        border-top: 2px solid #ddd;
+        box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    #chat-box {
+        max-height: 250px;
+        overflow-y: auto;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 5px;
+    }
+    .chat-message {
+        padding: 5px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        background: #f1f1f1;
+        position: relative;
+    }
+    .reply-message {
+        font-size: 12px;
+        color: #666;
+        margin-top: 3px;
+        padding-left: 10px;
+        border-left: 2px solid #ccc;
+    }
+    .reaction-menu {
+        display: none;
+        position: absolute;
+        right: 5px;
+        bottom: 5px;
+    }
+    .chat-message:hover .reaction-menu {
+        display: block;
+    }
+    .chat-input-container {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+    }
+    .chat-input-container input {
+        flex-grow: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    .chat-input-container button {
+        margin-left: 10px;
+        padding: 8px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    /* 既読・未読のスタイル */
+    .chat-message {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-message .read-status {
+        font-size: 12px;
+        color: gray;
+    }
+
+    .chat-message.read .read-status {
+        color: blue;  /* 既読メッセージは青色に */
+    }
+
 
 </style>
 

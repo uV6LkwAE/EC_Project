@@ -1,7 +1,7 @@
 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
-from .models import Transaction, TransactionRating
+from .models import Transaction, TransactionRating, Message
 from .forms import TransactionRatingForm
 from products.models import Product, ProductImage
 from accounts.models import Follow
@@ -108,6 +108,7 @@ def update_transaction_status(request, transaction_id):
 @login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
+    messages = Message.objects.filter(transaction=transaction).order_by("timestamp")
 
     # 出品者または購入者の評価がまだ投稿されていないか確認
     seller_rating_exists = TransactionRating.objects.filter(transaction=transaction, rated_user=transaction.seller).exists()
@@ -189,6 +190,7 @@ def transaction_detail(request, transaction_id):
         # 'alert_message': alert_message, 
         'debug_message': debug_message,
         'first_image': first_image,
+        'messages': messages,
     })
 
 @login_required

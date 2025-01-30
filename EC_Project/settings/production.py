@@ -20,3 +20,14 @@ DATABASES = {
 # デバッグ用
 if not DATABASES['default']:
     raise ValueError("DATABASE_URL is not set in the environment")
+
+
+# 本番環境の Redis 設定（EC2 上の Redis を使用）
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("YOUR_EC2_IP", 6379)],  # EC2のグローバルIP or プライベートIP
+        },
+    },
+}

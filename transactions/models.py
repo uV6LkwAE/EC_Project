@@ -2,6 +2,7 @@
 from django.db import models
 from accounts.models import CustomUser
 from products.models import Product
+from django.conf import settings
 
 class Transaction(models.Model):
     STATUS_CHOICES = [
@@ -64,3 +65,16 @@ class TransactionStatusHistory(models.Model):
 
     def __str__(self):
         return f"Status: {self.status} at {self.changed_at}"
+
+# リアルタイムチャット
+class Message(models.Model):
+    transaction = models.ForeignKey("Transaction", on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    reply_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    is_read = models.BooleanField(default=False)
+    reactions = models.JSONField(default=dict)  # スタンプ用
+
+    class Meta:
+        ordering = ['timestamp']
