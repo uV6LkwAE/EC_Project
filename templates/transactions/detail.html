@@ -199,12 +199,12 @@
                         {% endif %}
                     </div>
                 {% endif %}
-                <div class="col-auto message-wrapper">
+                <div class="col-auto message-wrapper" data-message-id="{{ message.id }}">
                     <div class="message-content {% if message.sender == user %}my-message{% else %}other-message{% endif %}">
                         <p class="m-2">{{ message.content }}</p>
                     </div>
                     <div class="message-meta">
-                        <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+                        <span class="timestamp">{{ message.timestamp|date:"m-d H:i" }}</span>
                         {% if message.sender == user %}
                             <span class="read-status">{{ message.is_read|yesno:"既読,未読" }}</span>
                         {% endif %}
@@ -212,12 +212,23 @@
                 </div>
             </div>
         {% endfor %}
+
         <!-- typing-bubble のデフォルト表示はなし -->
         <div id="typing-indicator-container"></div>
+
+        <!-- スクロールボタン (chat-box の外側に設置) -->
+        <button id="scroll-bottom-btn" class="scroll-bottom-btn">
+            <i class="bi bi-arrow-down-circle-fill"></i>
+        </button>
     </div>
+
+
+
     <div class="chat-input-container">
         <input type="text" id="chat-input" class="form-control" placeholder="メッセージを入力">
-        <button id="send-button" class="btn btn-primary">送信</button>
+        <button id="send-button" class="btn btn-primary">
+            <i class="bi bi-send-fill"></i>
+        </button>
     </div>
 </div>
 
@@ -255,6 +266,12 @@
 </div>
 
 <script>
+document.querySelectorAll(".message-wrapper").forEach(messageElement => {
+    console.log("message-wrapper要素:", messageElement.outerHTML);
+    console.log("data-message-id:", messageElement.dataset.messageId);
+});
+
+
 const transactionId = "{{ transaction.id }}";
 const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${transactionId}/`);
 const typingIndicator = document.getElementById("typing-indicator");
@@ -311,6 +328,7 @@ const typingIndicator = document.getElementById("typing-indicator");
 // }
 
 // メッセージを追加する関数
+// メッセージを追加する関数
 function addMessageToChatBox(data) {
     const chatBox = document.getElementById("chat-box");
     let row = document.createElement("div");
@@ -336,7 +354,8 @@ function addMessageToChatBox(data) {
             // アイコンがない場合 (デフォルトアイコン)
             let icon = document.createElement("i");
             icon.classList.add("bi", "bi-person-circle", "user-icon");
-            icon.style.width = "100px";
+            icon.style.fontSize = "3em"; // `width` ではなく `font-size` で調整
+            icon.style.color = "gray";
             iconWrapper.appendChild(icon);
         }
 
@@ -363,7 +382,8 @@ function addMessageToChatBox(data) {
 
     let timestamp = document.createElement("span");
     timestamp.classList.add("timestamp");
-    timestamp.innerText = data.timestamp.slice(11, 16); // "H:i" にフォーマット
+    let formattedTimestamp = data.timestamp.slice(5, 16); // "MM-DD HH:MM"
+    timestamp.innerText = formattedTimestamp;
 
     metaDiv.appendChild(timestamp);
 
@@ -374,8 +394,8 @@ function addMessageToChatBox(data) {
         metaDiv.appendChild(readStatus);
     }
 
-    messageContent.appendChild(metaDiv);
     messageWrapper.appendChild(messageContent);
+    messageWrapper.appendChild(metaDiv);
     row.appendChild(messageWrapper);
     chatBox.appendChild(row);
 
@@ -384,6 +404,7 @@ function addMessageToChatBox(data) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }, 100);
 }
+
 
 
 
@@ -428,10 +449,30 @@ chatSocket.onmessage = function(event) {
     }
 
     // 既読更新メッセージの処理
+    // if (data.type === "update_is_read") {
+    //     document.querySelectorAll(".chat-message").forEach(element => {
+    //         if (element.dataset.messageId == data.message_id) {
+    //             let readStatusElement = element.querySelector(".read-status");
+    //             if (readStatusElement) {
+    //                 readStatusElement.innerText = "既読";
+    //             }
+    //         }
+    //     });
+    //     return; // `chat-box` には追加しない
+    // }
+
+    // 既読更新メッセージの処理
     if (data.type === "update_is_read") {
-        document.querySelectorAll(".chat-message").forEach(element => {
-            if (element.dataset.messageId == data.message_id) {
-                let readStatusElement = element.querySelector(".read-status");
+        // alert("update_is_readを検出しました。");
+        console.log("update_is_readを検出しました。");
+        document.querySelectorAll(".message-wrapper").forEach(messageElement => {
+            console.log("チェック中のメッセージID:", messageElement.dataset.messageId, "受信したID:", data.message_id);
+            // console.log(messageElement.dataset.messageId);
+            // console.log(data.message_id);
+            // undefinedであることを条件に
+            if (typeof messageElement.dataset.messageId === "undefined") {
+                console.log("型が一致しました。");
+                let readStatusElement = messageElement.querySelector(".read-status");
                 if (readStatusElement) {
                     readStatusElement.innerText = "既読";
                 }
@@ -459,6 +500,30 @@ document.getElementById("chat-input").addEventListener("keydown", function() {
     chatSocket.send(JSON.stringify({ "type": "typing", "typing": true }));
 });
 
+
+// ページロード時に chat-box を一番下までスクロール
+const scrollBottomBtn = document.getElementById("scroll-bottom-btn");
+
+// スクロール時にボタンの表示・非表示を切り替える
+chatBox.addEventListener("scroll", function() {
+    let isAtBottom = chatBox.scrollHeight - chatBox.scrollTop <= chatBox.clientHeight + 10;
+
+    if (isAtBottom) {
+        scrollBottomBtn.style.display = "none";  // 一番下に到達したら非表示
+    } else {
+        scrollBottomBtn.style.display = "flex";  // それ以外の場合は表示
+    }
+});
+
+// ボタンをクリックしたら最下部へスムーズにスクロール
+scrollBottomBtn.addEventListener("click", function() {
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+});
+
+// ページロード時に自動スクロール
+window.onload = function() {
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+};
 
 </script>
 
@@ -563,6 +628,7 @@ document.getElementById("chat-input").addEventListener("keydown", function() {
 
     /* チャットボックス */
     #chat-box {
+        position: relative;
         max-height: 50vh;
         overflow-y: auto;
         padding: 2vh;
@@ -678,6 +744,30 @@ document.getElementById("chat-input").addEventListener("keydown", function() {
     .dot:nth-child(1) { animation-delay: 0s; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    .scroll-bottom-btn {
+        position: fixed;
+        bottom: 110px; /* チャット入力エリアにかぶらないように調整 */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+        display: none; /* 初期状態では非表示 */
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: opacity 0.3s;
+    }
+
+    .scroll-bottom-btn:hover {
+        background-color: #0056b3;
+    }
 
 </style>
 
