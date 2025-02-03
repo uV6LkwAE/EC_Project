@@ -157,38 +157,68 @@
 </div>
 
 <!-- リアルタイムチャット -->
-<div class="chat-container fixed-bottom">
+<!-- <div class="chat-container">
     <h3 class="text-center">リアルタイムチャット</h3>
     <div id="chat-box">
         {% for message in messages %}
-            <div class="chat-message" data-message-id="{{ message.id }}" ondblclick="setReply('{{ message.id }}', '{{ message.content }}')">
-                <strong>{{ message.sender.username }}</strong>: {{ message.content }}
-                {% if message.reply_to %}
-                    <div class="reply-message">↳ {{ message.reply_to.content }}</div>
+            <div class="chat-message {% if message.sender == user %}my-message{% else %}other-message{% endif %}" data-message-id="{{ message.id }}">
+                {% if message.sender != user %}
+                    <img src="{% static 'images/user_icon.png' %}" class="user-icon" alt="User Icon">
                 {% endif %}
-                {% if message.is_read %}
-                    <span class="text-muted small">✔ 既読</span>
-                {% endif %}
-                <div class="reaction-menu">
-                    <button onclick="sendReaction('{{ message.id }}', '👍')">👍</button>
-                    <button onclick="sendReaction('{{ message.id }}', '❤️')">❤️</button>
-                    <button onclick="sendReaction('{{ message.id }}', '😂')">😂</button>
+                <div class="message-content">
+                    <p>{{ message.content }}</p>
+                    <div class="message-meta">
+                        <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+                        {% if message.sender == user %}
+                            <span class="read-status">{{ message.is_read|yesno:"既読,未読" }}</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         {% endfor %}
     </div>
 
-    {% if transaction.status != "completed" %}
     <div class="chat-input-container">
         <input type="text" id="chat-input" placeholder="メッセージを入力">
-        <input type="hidden" id="reply-to" value="">
         <button id="send-button">送信</button>
     </div>
-    {% else %}
-    <div class="alert alert-info text-center">この取引は完了しているため、チャットは履歴のみ閲覧可能です。</div>
-    {% endif %}
-    
-    <p id="typing-indicator" style="display:none;">入力中...</p>
+</div> -->
+
+<!-- リアルタイムチャット -->
+<div class="container chat-container mt-4">
+    <h3 class="text-center">リアルタイムチャット</h3>
+    <div id="chat-box" class="px-3 py-2">
+        {% for message in messages %}
+            <div class="row {% if message.sender == user %}justify-content-end{% else %}justify-content-start{% endif %} mx-0 my-1 mb-4 flex-wrap">
+                {% if message.sender != user %}
+                    <div class="col-auto">
+                        {% if chat_partner_image %}
+                            <img src="{{ chat_partner_image }}" class="user-icon" alt="User Icon" style="width: 100px;">
+                        {% else %}
+                            <i class="bi bi-person-circle user-icon" style="width: 100px;"></i>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div class="col-auto message-wrapper">
+                    <div class="message-content {% if message.sender == user %}my-message{% else %}other-message{% endif %}">
+                        <p class="m-2">{{ message.content }}</p>
+                    </div>
+                    <div class="message-meta">
+                        <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+                        {% if message.sender == user %}
+                            <span class="read-status">{{ message.is_read|yesno:"既読,未読" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <!-- typing-bubble のデフォルト表示はなし -->
+        <div id="typing-indicator-container"></div>
+    </div>
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" class="form-control" placeholder="メッセージを入力">
+        <button id="send-button" class="btn btn-primary">送信</button>
+    </div>
 </div>
 
 <!-- 評価モーダル (フォーム) -->
@@ -225,118 +255,210 @@
 </div>
 
 <script>
-    const transactionId = "{{ transaction.id }}";
-    const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${transactionId}/`);
+const transactionId = "{{ transaction.id }}";
+const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${transactionId}/`);
+const typingIndicator = document.getElementById("typing-indicator");
 
-    chatSocket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        console.log("🔥 WebSocket 受信データ:", data);
+// 一旦さようなら
+// メッセージを追加する関数
+// function addMessageToChatBox(data) {
+//     const chatBox = document.getElementById("chat-box");
+//     let row = document.createElement("div");
+//     row.classList.add("row", "mx-0", "my-1", "flex-wrap", "chat-message");
+//     row.dataset.messageId = data.message_id;
 
-        const chatBox = document.getElementById("chat-box");
+//     if (data.sender === "{{ user.username }}") {
+//         row.classList.add("justify-content-end");
+//     } else {
+//         row.classList.add("justify-content-start");
 
-        if (data.type === "chat_message") {
-            let newMessage = document.createElement("div");
-            newMessage.classList.add("chat-message");
-            newMessage.setAttribute("data-message-id", data.message_id);
-            
-            newMessage.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+//         let icon = document.createElement("img");
+//         icon.src = "{{ chat_partner_image }}";
+//         icon.classList.add("user-icon");
+//         row.appendChild(icon);
+//     }
 
-            if (data.reply_to && data.reply_to !== "null") {
-                let replyElement = document.createElement("div");
-                replyElement.classList.add("reply-message");
-                replyElement.innerText = `↳ ${data.reply_to}`;
-                newMessage.appendChild(replyElement);
-            }
+//     let messageContent = document.createElement("div");
+//     messageContent.classList.add("col-auto", "message-content");
+//     if (data.sender === "{{ user.username }}") {
+//         messageContent.classList.add("my-message");
+//     } else {
+//         messageContent.classList.add("other-message");
+//     }
 
-            chatBox.appendChild(newMessage);
-            chatBox.scrollTop = chatBox.scrollHeight; // 最新メッセージへスクロール
-        } 
+//     messageContent.innerHTML = `<p class="m-2">${data.message}</p>`;
 
-        // 既読通知を受信したら、ステータスを更新
-        else if (data.type === "update_is_read") {
-            let msgElement = document.querySelector(`.chat-message[data-message-id="${data.message_id}"]`);
-            if (msgElement) {
-                msgElement.classList.add("read");  // CSS で既読スタイル適用
-                msgElement.setAttribute("data-is-read", "true");
+//     let metaDiv = document.createElement("div");
+//     metaDiv.classList.add("d-flex", "justify-content-end", "align-items-center", "message-meta");
 
-                // 既読・未読のラベル更新
-                let statusElement = msgElement.querySelector(".read-status");
-                if (statusElement) {
-                    statusElement.innerText = "✔ 既読";
+//     let timestamp = document.createElement("span");
+//     timestamp.classList.add("timestamp", "me-2");
+//     timestamp.innerText = data.timestamp;
+
+//     metaDiv.appendChild(timestamp);
+
+//     if (data.sender === "{{ user.username }}") {
+//         let readStatus = document.createElement("span");
+//         readStatus.classList.add("read-status");
+//         readStatus.innerText = data.is_read ? "既読" : "未読";
+//         metaDiv.appendChild(readStatus);
+//     }
+
+//     messageContent.appendChild(metaDiv);
+//     row.appendChild(messageContent);
+//     chatBox.appendChild(row);
+//     chatBox.scrollTop = chatBox.scrollHeight;
+// }
+
+// メッセージを追加する関数
+function addMessageToChatBox(data) {
+    const chatBox = document.getElementById("chat-box");
+    let row = document.createElement("div");
+    row.classList.add("row", "mx-0", "my-1", "mb-4", "flex-wrap");
+
+    // 送信者が現在のユーザーかどうか
+    if (data.sender === "{{ user.username }}") {
+        row.classList.add("justify-content-end");
+    } else {
+        row.classList.add("justify-content-start");
+
+        let iconWrapper = document.createElement("div");
+        iconWrapper.classList.add("col-auto");
+
+        if (data.sender_icon) {
+            // アイコンがある場合
+            let icon = document.createElement("img");
+            icon.src = data.sender_icon;
+            icon.classList.add("user-icon");
+            icon.style.width = "100px";
+            iconWrapper.appendChild(icon);
+        } else {
+            // アイコンがない場合 (デフォルトアイコン)
+            let icon = document.createElement("i");
+            icon.classList.add("bi", "bi-person-circle", "user-icon");
+            icon.style.width = "100px";
+            iconWrapper.appendChild(icon);
+        }
+
+        row.appendChild(iconWrapper);
+    }
+
+    let messageWrapper = document.createElement("div");
+    messageWrapper.classList.add("col-auto", "message-wrapper");
+
+    let messageContent = document.createElement("div");
+    messageContent.classList.add("message-content");
+    if (data.sender === "{{ user.username }}") {
+        messageContent.classList.add("my-message");
+    } else {
+        messageContent.classList.add("other-message");
+    }
+
+    // メッセージ内容を追加
+    messageContent.innerHTML = `<p class="m-2">${data.message}</p>`;
+
+    // メタ情報（タイムスタンプ、既読）
+    let metaDiv = document.createElement("div");
+    metaDiv.classList.add("message-meta");
+
+    let timestamp = document.createElement("span");
+    timestamp.classList.add("timestamp");
+    timestamp.innerText = data.timestamp.slice(11, 16); // "H:i" にフォーマット
+
+    metaDiv.appendChild(timestamp);
+
+    if (data.sender === "{{ user.username }}") {
+        let readStatus = document.createElement("span");
+        readStatus.classList.add("read-status");
+        readStatus.innerText = data.is_read ? "既読" : "未読";
+        metaDiv.appendChild(readStatus);
+    }
+
+    messageContent.appendChild(metaDiv);
+    messageWrapper.appendChild(messageContent);
+    row.appendChild(messageWrapper);
+    chatBox.appendChild(row);
+
+    // **自動スクロール**
+    setTimeout(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 100);
+}
+
+
+
+// タイピングアニメーション
+const chatInput = document.getElementById("chat-input");
+const chatBox = document.getElementById("chat-box");
+const typingIndicatorContainer = document.getElementById("typing-indicator-container");
+let typingTimeout;
+
+// タイピングアニメーション用の要素を作成
+function createTypingBubble() {
+    const typingBubble = document.createElement("div");
+    typingBubble.classList.add("typing-bubble");
+    typingBubble.innerHTML = `
+        <span class="dot"></span>
+        <span class="dot middle"></span>
+        <span class="dot"></span>
+    `;
+    return typingBubble;
+}
+
+// WebSocket メッセージ受信時の処理
+chatSocket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    console.log("WebSocket 受信データ:", data);
+
+    // 入力中の通知を処理
+    if (data.type === "typing") {
+        // 既存の typing-bubble を削除
+        typingIndicatorContainer.innerHTML = "";
+
+        // 新しいアニメーションを追加
+        const typingBubble = createTypingBubble();
+        typingIndicatorContainer.appendChild(typingBubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 1秒後に削除（新しい `typing` メッセージが来たらリセット）
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            typingIndicatorContainer.innerHTML = "";
+        }, 1000);
+    }
+
+    // 既読更新メッセージの処理
+    if (data.type === "update_is_read") {
+        document.querySelectorAll(".chat-message").forEach(element => {
+            if (element.dataset.messageId == data.message_id) {
+                let readStatusElement = element.querySelector(".read-status");
+                if (readStatusElement) {
+                    readStatusElement.innerText = "既読";
                 }
             }
-        }
-        
-        // タイピングメッセージの処理
-        else if (data.typing) {
-            const typingIndicator = document.getElementById("typing-indicator");
-            if (typingIndicator) {
-                typingIndicator.style.display = "block";
-                setTimeout(() => { typingIndicator.style.display = "none"; }, 2000);
-            }
-        }
-    };
-
-
-    document.getElementById("send-button").onclick = function() {
-        const messageInput = document.getElementById("chat-input");
-        const replyTo = document.getElementById("reply-to").value;
-        const message = messageInput.value;
-        chatSocket.send(JSON.stringify({ "message": message, "reply_to": replyTo }));
-        messageInput.value = "";
-        document.getElementById("reply-to").value = "";
-    };
-
-
-
-    function sendReaction(messageId, reaction) {
-        chatSocket.send(JSON.stringify({ "reaction": reaction, "message_id": messageId }));
+        });
+        return; // `chat-box` には追加しない
     }
 
-    function setReply(messageId, content) {
-        document.getElementById("reply-to").value = messageId;
-        document.getElementById("chat-input").placeholder = `返信: ${content}`;
+    // 通常のメッセージを追加
+    if (data.type === "chat_message") {
+        addMessageToChatBox(data);
     }
+};
 
-    document.getElementById("chat-input").addEventListener("input", function() {
-        chatSocket.send(JSON.stringify({ "typing": true }));
-    });
+// メッセージ送信処理
+document.getElementById("send-button").onclick = function() {
+    const messageInput = document.getElementById("chat-input");
+    const message = messageInput.value;
+    chatSocket.send(JSON.stringify({ "message": message }));
+    messageInput.value = "";
+};
 
+// 入力中の通知を送信
+document.getElementById("chat-input").addEventListener("keydown", function() {
+    chatSocket.send(JSON.stringify({ "type": "typing", "typing": true }));
+});
 
-    function updateChatUI(messageData) {
-        console.log("📌 `updateChatUI()` が実行された:", messageData);
-
-        const chatBox = document.getElementById("chat-box");
-        if (!chatBox) {
-            console.error("❌ `#chat-box` が見つかりません");
-            return;
-        }
-
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add("chat-message");
-        messageDiv.setAttribute("data-message-id", messageData.message_id);
-        messageDiv.setAttribute("data-is-read", messageData.is_read ? "true" : "false");
-        
-        messageDiv.innerHTML = `
-            <strong>${messageData.sender}</strong>: ${messageData.message}
-            <span class="read-status">${messageData.is_read ? "✔ 既読" : "未読"}</span>
-        `;
-        
-        if (messageData.reply_to) {
-            const replyDiv = document.createElement("div");
-            replyDiv.classList.add("reply-message");
-            replyDiv.textContent = `↳ ${messageData.reply_to}`;
-            messageDiv.appendChild(replyDiv);
-        }
-
-        // 既読の場合にスタイルを適用
-        if (messageData.is_read) {
-            messageDiv.classList.add("read");
-        }
-
-        chatBox.appendChild(messageDiv);
-        chatBox.scrollTop = chatBox.scrollHeight; // 最新メッセージへスクロール
-    }
 
 </script>
 
@@ -399,14 +521,6 @@
         background-color: #007bff;
     }
 
-
-
-
-
-
-
-
-
     /* カードにホバー効果を追加 */
     .card.hover-effect {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -440,84 +554,130 @@
 
     /* リアルタイムチャット */
     .chat-container {
+        margin-top: 3vh;
+        padding: 2vh;
         background: white;
-        padding: 10px;
-        width: 100%;
-        max-width: 100%;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        border-top: 2px solid #ddd;
-        box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-    }
-    #chat-box {
-        max-height: 250px;
-        overflow-y: auto;
-        border-bottom: 1px solid #ccc;
-        margin-bottom: 10px;
-        padding: 5px;
-    }
-    .chat-message {
-        padding: 5px;
+        border: 1px solid #ddd;
         border-radius: 5px;
-        margin-bottom: 5px;
-        background: #f1f1f1;
-        position: relative;
     }
-    .reply-message {
-        font-size: 12px;
-        color: #666;
-        margin-top: 3px;
-        padding-left: 10px;
-        border-left: 2px solid #ccc;
+
+    /* チャットボックス */
+    #chat-box {
+        max-height: 50vh;
+        overflow-y: auto;
+        padding: 2vh;
     }
-    .reaction-menu {
-        display: none;
-        position: absolute;
-        right: 5px;
-        bottom: 5px;
+
+    /* メッセージのラッパー */
+    .message-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; /* メッセージを右寄せ */
+        max-width: 50vw;
     }
-    .chat-message:hover .reaction-menu {
-        display: block;
+
+    /* メッセージ本体 */
+    .message-content {
+        display: inline-block;
+        padding: 1vh 1.5vh;
+        border-radius: 1vh;
+        word-wrap: break-word;
     }
+
+    /* 自分のメッセージ */
+    .my-message {
+        background: #0F8CFF;
+        color: white;
+        text-align: left;
+    }
+
+    /* 相手のメッセージ */
+    .other-message {
+        background: lightgray;
+        color: black;
+    }
+
+    /* アイコン */
+    .user-icon {
+        width: 2.5em;
+        height: 2.5em;
+        border-radius: 50%;
+        margin-right: 1vw;
+    }
+
+    /* メッセージのメタ情報（時間・既読未読） */
+    .message-meta {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5vw;
+        font-size: 1.8vh;
+        color: gray;
+        margin-top: 0.3vh;
+    }
+
+    /* 入力エリア */
     .chat-input-container {
         display: flex;
-        padding: 10px;
+        padding: 2vh;
         border-top: 1px solid #ddd;
     }
-    .chat-input-container input {
-        flex-grow: 1;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    .chat-input-container button {
-        margin-left: 10px;
-        padding: 8px 15px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
+
+    /* 共通のアイコンスタイル */
+    .user-icon {
+        width: 100px !important;  /* アイコンのサイズ */
+        height: 100px !important;
+        border-radius: 50%;
+        margin-right: 1vw;
     }
 
-    /* 既読・未読のスタイル */
-    .chat-message {
-        padding: 10px;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .chat-message .read-status {
-        font-size: 12px;
+    /* Bootstrap アイコンのサイズ（<i>タグ用） */
+        .user-icon.bi {
+        font-size: 3em; /* `width` ではなく `font-size` で変更 */
         color: gray;
     }
 
-    .chat-message.read .read-status {
-        color: blue;  /* 既読メッセージは青色に */
+
+    /* ここ後で治す */
+    /* 入力中アニメーション */
+    /* 吹き出し全体 */
+    .typing-bubble {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        background-color: #E6E9ED;
+        border-radius: 20px;
+        position: relative;
+        width: 50px;
+        height: 30px;
     }
 
+    /* ドットの共通スタイル */
+    .dot {
+        width: 8px;
+        height: 8px;
+        background-color: #7F8C8D;
+        border-radius: 50%;
+        margin: 0 2px;
+        opacity: 0.5;
+        animation: typing-animation 1.5s infinite ease-in-out;
+    }
+
+    /* 中央のドットを青色に */
+    .middle {
+        background-color: #3498DB;
+    }
+
+    /* ドットのアニメーション */
+    @keyframes typing-animation {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* 各ドットに異なるアニメーションの遅延を設定 */
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
 
 </style>
 

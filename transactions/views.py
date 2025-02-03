@@ -177,6 +177,17 @@ def transaction_detail(request, transaction_id):
     # 関連するproductを取得
     product = transaction.product
     first_image = ProductImage.objects.filter(product=product).order_by('order').first()
+
+    # 相手の情報を取得
+    if user_is_buyer:
+        chat_partner = transaction.seller
+    else:
+        chat_partner = transaction.buyer
+
+    # 相手のプロフィール画像を取得（null の場合は取得しない）
+    chat_partner_image = None
+    if hasattr(chat_partner, 'profile') and getattr(chat_partner.profile, 'image', None):
+        chat_partner_image = chat_partner.profile.image.url
         
     return render(request, 'transactions/detail.html', {
         'transaction': transaction,
@@ -191,6 +202,7 @@ def transaction_detail(request, transaction_id):
         'debug_message': debug_message,
         'first_image': first_image,
         'messages': messages,
+        'chat_partner_image': chat_partner_image,
     })
 
 @login_required
