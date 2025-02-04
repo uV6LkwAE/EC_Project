@@ -340,11 +340,13 @@
 
             
                 <!-- コメントボタン -->
+                {% if user.is_authenticated %}
                 <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="コメントを確認・投稿する">
                     <button class="btn btn-secondary btn-sm d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#commentModal">
                         <i class="bi bi-chat-right-text-fill me-2"></i> コメント
                     </button>
                 </span>
+                {% endif %}
             
                 <!-- 編集ボタン -->
                 {% if user.is_authenticated and product.seller == user %}
